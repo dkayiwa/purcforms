@@ -89,6 +89,20 @@ public class XformParser {
 
 	/**
 	 * Converts an xml document to a form definition object.
+	 *
+	 * @param xml the document xml.
+	 * @return the form definition object.
+	 */
+	public static FormDef fromXform2FormDefGamb(String xml){
+		Document doc = XmlUtil.getDocument(xml);
+
+		HashMap<Integer,HashMap<String,String>> languageText = new HashMap<Integer,HashMap<String,String>>();
+
+		return fromXform2FormDef(doc, xml, languageText);
+	}
+
+	/**
+	 * Converts an xml document to a form definition object.
 	 * 
 	 * @param xml the document xml.
 	 * @return the form definition object.

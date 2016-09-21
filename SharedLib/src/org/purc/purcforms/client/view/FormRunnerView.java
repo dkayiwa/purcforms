@@ -239,11 +239,12 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 
 		tabs.clear();
 		if(formDef == null || layoutXml == null || layoutXml.trim().length() == 0){
-			addNewTab(LocaleText.get("page") + "1");
+			addNewTab(LocaleText.get("page") + " Bombeca ");
 			return;
 		}
 
 		loadLayout(layoutXml,externalSourceWidgets,getCalcQtnMappings(this.formDef));
+
 		isValid(true);
 		moveToFirstWidget();
 
@@ -274,6 +275,10 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 		externalSourceWidgetIndex = 0;
 		if(externalSourceWidgets != null && externalSourceWidgets.size() > 0 && FormUtil.getExternalSourceUrlSuffix() != null)
 			fillExternalSourceWidget(externalSourceWidgets.get(externalSourceWidgetIndex++),null);
+	}
+
+	public void appendButtons(){
+
 	}
 
 	/**
@@ -338,7 +343,9 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 		initValidationWidgetsMap(parentValidationWidgetQtns);
 
 		com.google.gwt.xml.client.Document doc = XMLParser.parse(xml);
+
 		Element root = doc.getDocumentElement();
+
 		NodeList pages = root.getChildNodes();
 		for(int i=0; i<pages.getLength(); i++){
 			if(pages.item(i).getNodeType() != Node.ELEMENT_NODE)

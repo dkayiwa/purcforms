@@ -55,7 +55,7 @@ public class FormRunnerEntryPoint implements EntryPoint{
 			
 			FormUtil.setupUncaughtExceptionHandler();	
 
-			FormUtil.retrieveUserDivParameters();
+			//FormUtil.retrieveUserDivParameters();
 
 			formRunner = new FormRunnerWidget(images);
 			
@@ -63,8 +63,12 @@ public class FormRunnerEntryPoint implements EntryPoint{
 
 			FormUtil.maximizeWidget(formRunner);
 
-			String formId = FormUtil.getFormId();
-			String entityId = FormUtil.getEntityId();
+			//String formId = FormUtil.getFormId();
+			//String entityId = FormUtil.getEntityId();
+
+			String formId = "1";
+			String entityId = "1";
+
 			if(formId != null && entityId != null)
 				formRunner.loadForm(Integer.parseInt(formId),Integer.parseInt(entityId));
 			else{
@@ -74,8 +78,11 @@ public class FormRunnerEntryPoint implements EntryPoint{
 
 			DeferredCommand.addCommand(new Command() {
 				public void execute() {
-					String formId = FormUtil.getFormId();
-					String entityId = FormUtil.getEntityId();
+					//String formId = FormUtil.getFormId();
+					//String entityId = FormUtil.getEntityId();
+
+					String formId = "1";
+					String entityId = "1";
 					if(formId == null || entityId == null)
 						FormUtil.dlg.hide();
 				}

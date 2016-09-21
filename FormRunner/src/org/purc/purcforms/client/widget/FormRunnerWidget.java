@@ -33,8 +33,7 @@ public class FormRunnerWidget extends Composite{
 	
 	/** The form runtime view. */
 	private FormRunnerView view;
-	
-	
+
 	/**
 	 * Creates a new instance of the form runner widget.
 	 * 
@@ -130,6 +129,7 @@ public class FormRunnerWidget extends Composite{
 	
 	
 	public void loadForm(int formId, String xformXml, String modelXml,String layoutXml, String javaScriptSource){
+//		Window.alert("formload");
 		FormDef formDef = XformParser.fromXform2FormDef(xformXml,modelXml);
 		formDef.setId(formId);
 		view.loadForm(formDef, layoutXml,javaScriptSource, null,false);

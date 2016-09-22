@@ -27,6 +27,7 @@ import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.resources.client.ImageResource;
+import com.google.gwt.safehtml.shared.SafeUri;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.ui.Button;
@@ -1071,8 +1072,10 @@ public class RuntimeWidgetWrapper extends WidgetEx implements QuestionChangeList
 			((DatePickerEx)widget).setText(null);
 		else if(widget instanceof DateTimeWidget)
 			((DateTimeWidget)widget).setText(null);
-		else if(widget instanceof Image)
-			((Image)widget).setUrl(null);
+		else if(widget instanceof Image){
+			SafeUri su = null;
+			((Image)widget).setUrl(su);			
+		}
 		else if(widget instanceof RuntimeGroupWidget)
 			((RuntimeGroupWidget)widget).clearValue();
 

@@ -43,7 +43,6 @@ public class CompositeTreeItem extends TreeItem {
 		getWidget().setStyleName("gwt-CompositeTreeItem");
 	}
 
-	@Override
 	public TreeItem addItem(String itemText) {
 		return super.addItem(new Label(itemText));
 	}

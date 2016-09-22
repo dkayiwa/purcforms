@@ -21,5 +21,4 @@
         
       <!-- Specify the application specific style sheet.              -->
       <stylesheet src='FormDesigner.css' />
-	 
 </module>

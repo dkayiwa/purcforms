@@ -22,6 +22,7 @@ import org.purc.purcforms.client.xforms.XmlUtil;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.http.client.URL;
+import com.google.gwt.safehtml.shared.SafeUri;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.Window;
@@ -672,7 +673,8 @@ public class RuntimeGroupWidget extends Composite implements OpenFileDialogEvent
 
 				if(wrapper.getWrappedWidget() instanceof Image){
 					image = (Image)wrapper.getWrappedWidget();
-					image.setUrl(null);
+					SafeUri su = null;
+					image.setUrl(su);
 					html = null;
 				}
 				else if(wrapper.getWrappedWidget() instanceof Label)

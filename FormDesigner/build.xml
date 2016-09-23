@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <project name="FormDesigner" default="gwtc" basedir=".">
-  <!-- Configure path to GWT SDK -->
-  <property name="gwt.sdk" location="../../gwt-2.7.0" />
-
+  
   <!-- SWT on Mac requires the -XstartOFirstThreadFlag. -->
   <condition property="XstartOnFirstThreadFlag" value="-XstartOnFirstThread"
     else="-Dgwt.dummy.arg1=">
@@ -19,10 +17,11 @@
 
   <path id="project.class.path">
   	<pathelement location="war/WEB-INF/classes" /> 
-    <pathelement location="${gwt.sdk}/gwt-user.jar"/>
-    <fileset dir="${gwt.sdk}" includes="gwt-dev*.jar"/>
+    <pathelement location="../SharedLib/lib/gwt-user-2.7.0.vaadin4.jar"/>
+    <fileset dir="../SharedLib/lib" includes="gwt-dev-2.7.0.vaadin4*.jar"/>
   	<fileset dir="../SharedLib/lib" includes="gwt-datepicker-r29.jar"/>
- 	<fileset dir="../FormDesigner/lib" includes="gwt-dnd-3.0.1.jar"/>
+ 	<fileset dir="../SharedLib/lib" includes="gwt-dnd-3.3.4.jar"/>
+  	<fileset dir="../SharedLib/lib" includes="asm-5.1.jar"/>
      <!-- Add any additional non-server libs (such as JUnit) -->
   	<fileset dir="war/WEB-INF/lib" includes="**/*.jar" />
   </path>

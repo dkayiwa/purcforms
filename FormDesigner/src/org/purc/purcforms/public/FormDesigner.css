@@ -2,6 +2,11 @@ body, html {
   height: 100%;
 }
 
+body, table td, select {
+  font-family: "Trebuchet MS", Arial, Sans-Serif !important;
+  font-size: 13px;
+}
+
 .cw-StackPanelHeader {
   padding-left: 7px;
   font-weight: bold;
@@ -38,9 +43,17 @@ body, html {
   background-color: white;
 }
 
-.purcforms-repeat-border {
+.purcforms-repeat-table {
   border: 1px dashed navy;
   background-color: white;
+}
+
+.purcforms-repeat-records-table {
+	margin-top: 3px;
+}
+
+.purcforms-repeat-records-table td {
+	padding-top: 2px;
 }
 
 .getting-started-blue {
@@ -96,6 +109,7 @@ body, html {
 .dragdrop-selected,.dragdrop-dragging,.dragdrop-proxy {
   filter: alpha(opacity = 50);
   opacity: 0.5;
+  border: thin dashed;
 }
 
 .purcforms-label-editor {
@@ -114,4 +128,8 @@ body, html {
   user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
+}
+
+.FormDesigner-repeat input, .FormDesigner-repeat select, .FormDesigner-repeat textarea {
+ 	margin-left: 15px;
 }

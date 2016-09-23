@@ -1,0 +1,330 @@
+/*
+	Copyright (C) 2011-2012 RWO, http://rwo.vlaanderen.be/
+	All rights reserved
+*/
+
+.titleInfo, .titleinfo {
+	font-style: italic;
+	color: #888888;
+}
+
+.h1, .h2, .h3, .h2_help {
+	font-weight: bold;
+}
+
+.questionGroup, .questiongroup {
+	font-weight: bold;
+}
+
+.purcTooltip {
+	border: 1px solid #415A67;
+	background: #EEEAE1;
+}
+
+.locked, .locked:disabled, .locked[disabled] {
+	border: none;
+	color: #3F5966;
+	background-color: white;
+	opacity: 1;
+}
+
+.lockedDesign, .lockedDesign:disabled, .lockedDesign[disabled] {
+	border: thin dashed #CCCCCC;
+	color: #3F5966;
+	background-color: white;
+	opacity: 1;
+}
+
+.gwt-MenuBar table {
+	border-collapse: collapse;
+}
+
+
+
+/* dialogbox remove original border */ 
+
+.gwt-DialogBox .Caption {
+  border-top: none;
+}
+.gwt-DialogBox .dialogBottomCenter {
+  background: none;
+  -background: none;
+}
+.gwt-DialogBox .dialogMiddleLeft {
+  background: none;
+}
+.gwt-DialogBox .dialogMiddleRight {
+  background: none;
+  -background: none;
+}
+.gwt-DialogBox .dialogTopLeftInner {
+  width: 0;
+}
+.gwt-DialogBox .dialogTopRightInner {
+  width: 0;
+}
+.gwt-DialogBox .dialogBottomLeftInner {
+  width: 0;
+  height: 0;
+}
+.gwt-DialogBox .dialogBottomRightInner {
+  width: 0;
+  height: 0;
+}
+ */.gwt-DialogBox .dialogTopLeft {
+  background: none;
+  -background: none;
+}
+.gwt-DialogBox .dialogTopRight {
+  background: none;
+  -background: none;
+}
+.gwt-DialogBox .dialogBottomLeft {
+  background: none;
+  -background: none;
+}
+.gwt-DialogBox .dialogBottomRight {
+  background: none;
+  -background: none;
+}
+* html .gwt-DialogBox .dialogTopLeftInner {
+  width: 0;
+  overflow: hidden;
+}
+* html .gwt-DialogBox .dialogTopRightInner {
+  width: 0;
+  overflow: hidden;
+}
+* html .gwt-DialogBox .dialogBottomLeftInner {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+* html .gwt-DialogBox .dialogBottomRightInner {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+
+/* ========================================================================= */
+/* ===   General styles. Not used in widgets.                            === */
+/* ========================================================================= */
+
+.hasBorder {
+	border: solid 1px #EEEAE1;
+}
+.clickable {
+	cursor: hand;
+	cursor: pointer;
+}
+.clickable:hover {
+	cursor: hand;
+	cursor: pointer;
+}
+
+
+/* TODO remove these icons. Use the GWT resource bundles instead! */
+/* .icon-info {
+	background: url(../img/icons/blue.png) no-repeat 0px -342px;
+	width: 30px;
+	height: 30px;
+}
+.icon-help {
+	background: url(../img/icons/blue.png) no-repeat 0px -172px;
+	width: 30px;
+	height: 30px;
+}
+.icon-warn {
+	background: url(../img/icons/orange.png) no-repeat 0px -820px;
+	width: 30px;
+	height: 30px;
+}
+.icon-error {
+	background: url(../img/icons/orange.png) no-repeat 0px -820px;
+	width: 30px;
+	height: 30px;
+}
+.icon-close {
+	background: url(../img/icons/orange.png) no-repeat 0px -784px;
+	width: 30px;
+	height: 30px;
+}
+.icon-info:hover, .icon-help:hover, .icon-warn:hover, .icon-error:hover, .icon-close:hover {
+	cursor: pointer;
+} */
+
+/* ========================================================================= */
+/* ===   Icon positioning + coloring for Buttons                         === */
+/* ========================================================================= */
+/* .messageBox-icon {
+	float: left;
+	width: 32px;
+	height: 32px;
+}
+.messageBox-content {
+	float:left;
+	margin-left: 20px;
+}
+ */
+
+/* ========================================================================= */
+/* ===   DialogBox extension                                             === */
+/* ========================================================================= */
+.gwt-DialogBox-orange {
+	border-color: #E77926;
+}
+
+/* ========================================================================= */
+/* ===    Message Widget                                                 === */
+/* ========================================================================= */
+
+.message-info, .helpText {
+	border: 1px solid #415A67;
+	background: #EEEAE1;
+	padding: 7px 10px;
+}
+
+.helpText {
+	background-color: #EEEAE1;
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAC7klEQVR42sVVS2gTQRgOIuIDLyoqiIoieqj4OHnxEIndnYZGRIjiY2eniYZ0Zyal+EJUclAR1IOgNwVBBEGRiMegqKCeKohYKoqPgs+e1LaWmj78/90/NdHsJD25MCQ787++b//5/kgk5ElkMjOZo2zmypu2K99Zrvppu2oEVgnef8Dva9i7bKf02shknnw+P4UJFYUA92H9gjVKgcMWJFRFSNrUUAIwlBR4DNYgvHdBpUex0mSyc8aW1KHZWIDF5Rmbq2eUZMz3EXpfaOBoND/V5vIwGPaTQ68lZHO9giyuWsC2D9a4T51Q2ZqGzFVpgjsKvN+J7e1YUMsOUdjpzjmVezEu5zKu7hGdg4CutboKRy2Dg49U+ZPEzsy8mvTt8VbA+WcfJfyvitHmLYb9bh8JV+/jwltYyfs54vJrrK19eRgdUKUXUKFK8bRc+vd5C9frqcNGmKuPBdwLMR3bkBKcNPGNHxg4Pm7z3KbwJtEXKdarZDI/DeiRG7Ai7PPNTm5JqKNQuyxXZnCZEsS5XAnxhjAm4+1rwFGeCiCpN8YOCxpg3F/gY2511Rug0Pvx5QZBKpqo8SufSCK3GxNw+diPyfVVTFAgx4LJqZVnF5URWE5udR0ERSq6ANnULYJz1+TEhN5GCfrrXT6g+xHFvIStd5qy9Zid5BGip6u+3KhPfkyUDuZ4G4migVq9PXGRXHWdElwxBW8W3rqyCPpdaTkHZoHzh0Ai1NnwD+cL2zhQdbAO0mskGS8qqpMncBPvAlYQ0qZDQQIZDw0esPEdEVhC6T9iBcKGMkEf8Snqyr8SUO6g7PxawZEOOH9Ldt0ogNUcC50gHUF4D3GiNTqkUL+g4gfkO4CTMEwOssGQ8av4glrfwDzYUTFD+ixX7za3mJAOGA6TA9xG+RIFDBHiZUMZtoXH4OwCzmWqGm2HAcXWRsdmE93GkmEWl2c1jsrbLNWxKjLZB9UQWxe66zkE+lZWSfrfA5Sex2EV+Z/Pb4TH1DC+3PY7AAAAAElFTkSuQmCC");
+	background-position: 10px 6px;
+	background-repeat: no-repeat;
+	padding: 10px 10px 10px 44px;
+}
+
+.message-help {
+	border: 1px solid #415A67;
+	background: #EEEAE1;
+	padding: 7px 10px;
+}
+
+.message-warn {
+	border: 1px solid #415A67;
+	background: #fae7d8;
+	padding: 7px 10px;
+}
+
+.message-error {
+	border: 1px solid #E77926;
+	background: #fae7d8;
+	padding: 7px 10px;
+}
+
+.message-error td {
+	color: #E77926;
+}
+
+.labelWithHelp {
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB70lEQVR42mNgQAKhoaHMbol5Vu7xOauA+B0Q/4fg3Ndu8Tlz3JNy9RlwAeO0NFaP+JydQA1/3eOzPwFxj2dsrr1rfK4b0IDZQPGvQPwPiDc7ONSzMKDaXM/mnpCzAyj5G4in47LEPS57LtSQNWgSuYtATvVIyI5AFvfMzWUH2n7KPS7PEcmQFJBat4TsGWABr+RseYiTc1Zh2JiQawsU/+iRkOOAIh6fux0URp7RuTIMHgm5QSATXZNypJAVucWWcANd5gJyVWhoISeynHNiphLYFXHZPkBbclaATEO33TU2xwQaCx+dU/LFMVwXn/PZPS5nFoNbQs4BoBfOoCsAhTQw6i4B/XwDFMhYDLgO0ssAijogvouuwCUtjR+o6CFIHmuMxOc8BVqwnAFIFIKciq7ALTFLFij+BRhgjRiuS0jggIRBTjiDV0KOLjS1NaLakK0NjVovdAM84nImAeV+ecbnKoP9CuScBwWKZ2KuFpKiGJAB6DEASs5A8e9AC/bV19czQRIMMD6Bgm+A+C3YVBzAMyHXAqjmFShvuMcUSKJIesVlq4GiDJqctwEVxfkllfGCXOCekB0LzSegZPzOLTZHEWeGAsbtUlAII3IiHINCfQ4oxzIQAr6RaSJusXk6nnG5hu6J2UaggAaJYVMLALko6ABMp7lNAAAAAElFTkSuQmCC");
+	background-position: left top;
+	background-repeat: no-repeat;
+    cursor: pointer;
+    padding-left: 20px;
+    display:block;
+    min-height: 16px;
+}
+
+/* ========================================================================= */
+/* ===    GWT box extensions                                             === */
+/* ========================================================================= */
+
+.gwt-RadioButton label, .gwt-CheckBox label {
+	float: none;
+}
+
+.gwt-PasswordTextBox-readonly {
+	color: #888;
+}
+
+.gwt-TextBox-error, .gwt-SuggestBox-error, .gwt-ListBox-error, .gwt-TextArea-error, .gwt-PasswordTextBox-error {
+	border: 2px solid red;
+}
+
+
+/* ========================================================================= */
+/* ===    Geomajas Widgets                                               === */
+/* ========================================================================= */
+
+.gm-LegendDisclosurePanel-title {
+	margin: 0;
+	padding: 5px 8px;
+	text-decoration: none;
+	text-transform: uppercase;
+	font-size: small;
+	cursor: pointer;
+	cursor: hand;
+	background: #415A67;
+	color: #FFFFFF;
+	border: 1px solid #415A67;
+	border-radius: 1px 1px 1px 1px;
+}
+.gm-LegendDisclosurePanel-title:hover {
+	background: #415A67;
+	border: 1px outset #3F5966;
+}
+
+.gm-LegendDisclosurePanel-legend {
+    background: #FFFFFF;
+    color: #415A67;
+    border: 1px solid #415A67;
+    padding: 5px 10px;
+	border-radius: 1px 1px 1px 1px;
+}
+
+
+/*---------------------------------------------------------------------------*/
+/*             DROP DOWN BUTTON (apply on GWT MenuBar widget)                */
+/*---------------------------------------------------------------------------*/
+
+.gwt-MenuBar .gwt-MenuItem {
+    border: 1px solid transparent;
+    font-family: "Trebuchet MS", Arial, Sans-Serif;
+	padding: 2px 8px;
+	text-decoration: none;
+	font-size: small;
+	line-height: 16px;
+	font-weight: normal;
+}
+
+.gwt-MenuBar .gwt-MenuItem-selected {
+    background: #EEEAE1;
+    border: 1px solid #EEEAE1;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.gwt-MenuBar-horizontal {
+	border: 0px;
+	background: transparent;
+}
+
+.gwt-MenuBar-horizontal .gwt-MenuItem {
+    background: #415A67;
+    border: 1px solid #415A67;
+    cursor: pointer;
+    cursor: hand;
+    padding: 5px 9px 5px 10px;
+    vertical-align: bottom;
+	text-transform: uppercase;
+    color: #FFFFFF;
+}
+
+.gwt-MenuBar-horizontal .gwt-MenuItem-selected {
+	border: 1px outset #3F5966;
+	text-decoration: underline;
+}
+
+.gwt-MenuBar-vertical {
+    margin-top: 0px;
+    margin-left: 0px;
+    background: #FFFFFF;
+    padding: 3px 0px;
+    border: 1px solid #415A67;
+    color: #415A67;
+}
+
+.gwt-MenuBar .gwt-MenuItem-disabled {
+    background: #F6F6F6;
+    color: #999999;
+}

@@ -9,16 +9,13 @@ import java.io.Serializable;
  */
 public class ModelConstants implements Serializable{
 	
-	/**
-	 * Generated serialization ID
-	 */
-	private static final long serialVersionUID = -830180521446083067L;
-
 	/** Empty strig representation */
 	public static final String EMPTY_STRING = "";
 	
 	/** Index for no selection */
 	public static final int NO_SELECTION = -1;
+	
+	public static final String NO_FORMID = "FORMID_NOT_SET";
 	
 	/** ID not set numeric value */
 	public static final int NULL_ID = -1;

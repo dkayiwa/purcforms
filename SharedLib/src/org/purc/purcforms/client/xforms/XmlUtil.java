@@ -1,7 +1,15 @@
 package org.purc.purcforms.client.xforms;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.purc.purcforms.client.xpath.XPathExpression;
+
+import com.google.gwt.core.shared.GWT;
+import com.google.gwt.xml.client.CDATASection;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Element;
+import com.google.gwt.xml.client.NamedNodeMap;
 import com.google.gwt.xml.client.Node;
 import com.google.gwt.xml.client.NodeList;
 import com.google.gwt.xml.client.XMLParser;
@@ -20,7 +28,6 @@ public class XmlUtil {
 	 * Instantiation of this class.
 	 */
 	private XmlUtil(){
-
 	}
 
 
@@ -40,6 +47,82 @@ public class XmlUtil {
 	}
 
 	/**
+	 * Gets the text value of a node. (includes child textnodes & cdatanodes, but not inner elements)
+	 * 
+	 * @param node the node whose text value to get.
+	 * @return the text value.
+	 */
+	public static String getTextValueShallow(Node node){
+		if (node == null) { return null; }
+		if (Node.ATTRIBUTE_NODE == node.getNodeType() || Node.TEXT_NODE == node.getNodeType()) { 
+			return node.getNodeValue(); 
+		} else if (Node.CDATA_SECTION_NODE == node.getNodeType()) {
+			return ((CDATASection) node).getData();
+		}
+		
+		Node inner = node.getFirstChild();
+		if (inner == null) { return null; }
+		StringBuilder sb = new StringBuilder();
+		do {
+			if (Node.TEXT_NODE == inner.getNodeType()) {
+				sb.append(inner.getNodeValue());
+			} else if (Node.CDATA_SECTION_NODE == inner.getNodeType()) {
+				return ((CDATASection) inner).getData(); // do not mix cdata nodes with textnodes!
+			}
+			inner = inner.getNextSibling();
+		} while (inner != null);
+		
+		return sb.toString();
+	}
+	
+	/**
+	 * Sets text in a node.
+	 * <p> Will replace existing content (of first valid node found).
+	 * <p> if Node is a TextNode, Attribute or Cdata, text is set directly.
+	 * <p> if Node is an Element: 
+	 * <br /> - replaces text if a child is a TextNode or a CData block (first occurence).
+	 * <br /> - else creates a new Textnode at the end.
+	 * <p> Will not create cdata nodes.
+	 * @param node
+	 * @param value
+	 */
+	public static void setTextValueShallow(Node node, String value) {
+		if (node == null) {
+			GWT.log("Cannot set value of a null node");
+			return;
+		}
+		if (Node.ATTRIBUTE_NODE == node.getNodeType() || Node.TEXT_NODE == node.getNodeType()) { 
+			node.setNodeValue(value);
+			
+		} else if (Node.CDATA_SECTION_NODE == node.getNodeType()) {
+			((CDATASection) node).setData(value);
+			
+		} else {
+			Node inner = node.getFirstChild();
+			if (inner == null) {
+				node.appendChild(node.getOwnerDocument().createTextNode(value));
+			} else {
+				Node textNode = null;
+				do {
+					if (Node.TEXT_NODE == inner.getNodeType() && textNode == null) {
+						textNode = inner;
+					} else if (Node.CDATA_SECTION_NODE == inner.getNodeType()) {
+						((CDATASection) inner).setData(value);
+						return; // do not mix cdata nodes with textnodes!
+					}
+					inner = inner.getNextSibling();
+				} while (inner != null);
+				// if we are still here it means no CData child was found and we need to add to a text node.
+				if (textNode != null) {
+					textNode.setNodeValue(value);
+				} else {
+					node.appendChild(node.getOwnerDocument().createTextNode(value));
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Gets the text value of a node.
 	 * 
 	 * @param node the node whose text value to get.
@@ -48,8 +131,17 @@ public class XmlUtil {
 	public static String getTextValue(Node node){
 		int numOfEntries = node.getChildNodes().getLength();
 		for (int i = 0; i < numOfEntries; i++) {
-			if (node.getChildNodes().item(i).getNodeType() == Node.TEXT_NODE){
-
+			Node child = node.getChildNodes().item(i);
+			Node nextChild = numOfEntries > i + 1 ? node.getChildNodes().item(i+1) : null;
+			
+			if (child.getNodeType() == Node.CDATA_SECTION_NODE) {
+				return ((CDATASection) child).getData();
+				
+			} else if (nextChild != null && nextChild.getNodeType() == Node.CDATA_SECTION_NODE) {
+				return ((CDATASection) nextChild).getData();
+				
+			} else if (child.getNodeType() == Node.TEXT_NODE) {
+				
 				//These iterations are for particularly firefox which when comes accross
 				//text bigger than 4096, splits it into multiple adjacent text nodes
 				//each not exceeding the maximum 4096. This is as of 04/04/2009
@@ -69,9 +161,9 @@ public class XmlUtil {
 				//return node.getChildNodes().item(i).getNodeValue();
 			}
 
-			if(node.getChildNodes().item(i).getNodeType() == Node.ELEMENT_NODE){
-				String val = getTextValue((Element)node.getChildNodes().item(i));
-				if(val != null)
+			String val = getTextValue((Element) node.getChildNodes().item(i));
+			if (node.getChildNodes().item(i).getNodeType() == Node.ELEMENT_NODE) {
+				if (val != null)
 					return val;
 			}
 		}
@@ -249,15 +341,99 @@ public class XmlUtil {
 		return node;
 	}
 	
-	
-	public static Node getChildCDATA(Node node){
+	public static Node getChildCDATA(Node node) {
 		NodeList nodes = node.getChildNodes();
-		for(int index = 0; index < nodes.getLength(); index++){
+		for (int index = 0; index < nodes.getLength(); index++) {
 			Node child = nodes.item(index);
 			if(child.getNodeType() == Node.CDATA_SECTION_NODE)
 				return child;
 		}
 		
 		return node;
+	}
+	
+	/**
+	 * Same as node.hasChildNodes() but ignores non-element nodes.
+	 * @param node
+	 * @return
+	 */
+	public static boolean hasChildElementNodes(Node node) {
+		if (node != null && node.hasChildNodes()) {
+			NodeList nodes = node.getChildNodes();
+			for (int index = 0; index < nodes.getLength(); index++) {
+				Node child = nodes.item(index);
+				if (child.getNodeType() == Node.ELEMENT_NODE)
+					return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Merges the data from source into target, notice that only the elements from target are checked (eg. != union) (non-existing target attributes are taken over).
+	 * <p>Both elements must have the same structure or nothing will be merged.
+	 * 
+	 * @param source
+	 * @param target
+	 */
+	public static void merge(Element source, Element target) {
+		if (target == null) {
+			GWT.log("cannot merge null node");
+			return;
+		}
+		
+		String val = source == null ? null : getTextValueShallow(source);
+		setTextValueShallow(target, val == null ? "" : val);
+		
+		List<String> foundAttrs = new ArrayList<String>();
+		if (target.hasAttributes()) {
+			NamedNodeMap atts = target.getAttributes();
+			for (int i = 0; i < atts.getLength(); i++) {
+				Node attr = atts.item(i);
+				String attVal = source == null ? "" : source.getAttribute(attr.getNodeName());
+				attr.setNodeValue(attVal == null ? "" : attVal);
+				foundAttrs.add(attr.getNodeName());
+			}
+		}
+		
+		if (source != null && source.hasAttributes()) {
+			NamedNodeMap atts = source.getAttributes();
+			for (int i = 0; i < atts.getLength(); i++) {
+				Node attr = atts.item(i);
+				if (!foundAttrs.contains(attr.getNodeName())) {
+					target.setAttribute(attr.getNodeName(), attr.getNodeValue());
+				}
+			}
+		}
+		
+		if (target.hasChildNodes()) {
+			NodeList children = target.getChildNodes();
+			for (int i = 0; i < children.getLength(); i++) {
+				Node targetChild = children.item(i);
+				if (Node.ELEMENT_NODE == targetChild.getNodeType()) {
+					merge(getNode(source, targetChild.getNodeName()), (Element) targetChild);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Returns the first element found with xpathExpression. (ignoring text and other nodes)
+	 * @param parent
+	 * @param xpathExpr
+	 * @return
+	 */
+	public static Element findElement(Node parent, String xpathExpr) {
+		XPathExpression xpls =  new XPathExpression(parent, xpathExpr);
+		List<?> result = xpls.getResult();
+		if (result != null && result.size() > 0) {
+			for (int i = 0; i < result.size(); i++) {
+				Node r = (Node) result.get(i);
+				if (Node.ELEMENT_NODE == r.getNodeType()) {
+					return (Element) r;
+				}
+			}
+		}
+		return null;
 	}
 }

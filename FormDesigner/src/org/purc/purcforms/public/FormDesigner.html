@@ -30,15 +30,21 @@
     <div id="showLayoutXmlTab" style="visibility:hidden;">1</div>
     <div id="showModelXmlTab" style="visibility:hidden;">1</div>
     <div id="showJavaScriptTab" style="visibility:hidden;">1</div>
+    <div id="showPreviewTab" style="visibility:hidden;">1</div>
+    <div id="showDesignSurfaceTab" style="visibility:hidden;">1</div>
     <div id="allowBindEdit" style="visibility:hidden;">1</div>
+    <div id="combineFormOnSave" style="visibility:hidden;">1</div>
+    <div id="rebuildBindings" style="visibility:hidden;">0</div>
+    <div id="readOnly" style="visibility:hidden;">false</div>
     
     <div id="constraintMessageAttributeName" style="visibility:hidden;">message</div>
     <div id="gpsTypeName" style="visibility:hidden;">xsd:string</div>
     <div id="formKeyAttributeName" style="visibility:hidden;">formKey</div>
-    <div id="saveFormat" style="visibility:hidden;">purcforms</div>
+    <div id="saveFormat" style="visibility:hidden;">javarosa</div>
+    <div id="undoRedoBufferSize" style="visibility:hidden;">100</div>
     
-    <div id="defaultFontSize" style="visibility:hidden;">16</div>
-    <div id="defaultFontFamily" style="visibility:hidden;">Verdana, 'Lucida Grande', 'Trebuchet MS', Arial, Sans-Serif</div>
+    <div id="defaultFontSize" style="visibility:hidden;">13</div>
+    <div id="defaultFontFamily" style="visibility:hidden;"></div>
     
     <!-- <div id="entityIdName" style="visibility:hidden;">patientId</div> -->
     <!-- <div id="formIdName" style="visibility:hidden;">formId</div> -->
@@ -50,12 +56,15 @@
     <!-- <div id="entityFormDefDownloadUrlSuffix" style="visibility:hidden;">moduleServlet/xforms/xformDownload?target=xformentry&contentType=xml&</div> -->
     <!-- <div id="formDataUploadUrlSuffix" style="visibility:hidden;">module/xforms/xformDataUpload.form</div> -->
     <!-- <div id="afterSubmitUrlSuffix" style="visibility:hidden;">patientDashboard.form?</div> -->
+    <!-- <div id="externalSourceUrlSuffix" style="visibility:hidden;">widgetExternalSource?</div> -->
     
-    <!-- <div id="loading"><img src="loading.gif">Loading app </div> -->
+    <!-- <div id="loading"><img src="loading.gif">Loading app</div> -->
     
-    <div id="localeList" style="visibility:hidden;">en:English,fr:French</div>
+    <div id="localeList" style="visibility:hidden;">nl:Nederlands,fr:Français</div>
+    <div id="localeKey" style="visibility:hidden;">nl</div>
+    <div id="decimalSeparators" style="visibility:hidden;">nl:,;fr:,</div>
     
-    <div id="labelEdit" style="visibility:hidden;with:auto;height:auto;position:absolute;"></div>
+    <div id="labelEdit" style="visibility:hidden;width:auto;height:auto;position:absolute;"></div>
     
     <script language="javascript">
     	var PurcformsText = {
@@ -73,17 +82,18 @@
     	    	saveLayout: "Save Layout",
     	    	openLanguageText: "Open Language Text",
     	    	saveLanguageText: "Save Language Text",
+    	    	loadData: "Data laden",
     	    	close: "Close",
 
-    	    	refresh: "Refresh",
-    	    	addNew: "Add New",
-    	    	addNewChild: "Add New Child",
-    	    	deleteSelected: "Delete Selected",
-    	    	moveUp: "Move Up",
-    	    	moveDown: "Move Down",
-    	    	cut: "Cut",
-    	    	copy: "Copy",
-    	    	paste: "Paste",
+       	    	refresh: "Vernieuwen",
+       	    	addNew: "Voeg nieuwe rij toe",
+       	    	addNewChild: "Voeg nieuw kind toe",
+       	    	deleteSelected: "Verwijder geselecteerde",
+       	    	moveUp: "Verplaats naar boven",
+       	    	moveDown: "Verplaats naar beneden",
+       	    	cut: "Knip",
+       	    	copy: "Kopieer",
+       	    	paste: "Plak",
     	    	
     	    	format: "Format",
     	    	languages: "Languages",
@@ -149,6 +159,8 @@
     	    	isNotInList: "is not in list",
     	    	startsWith: "starts with",
     	    	doesNotStartWith: "does not start with",
+    	    	endsWith: "ends with",
+    	    	doesNotEndWith: "does not end with",
     	    	contains: "contains",
     	    	doesNotContain: "does not contain",
     	    	isBetween: "is between",
@@ -177,6 +189,7 @@
     			groupBox: "Group Box",
     			listBox: "ListBox",
     			repeatSection: "Repeat Section",
+    			groupSection: "Group Section",
     			picture: "Picture",
     			videoAudio: "Video/Audio",
     			timeWidget: "Time Widget",
@@ -212,7 +225,7 @@
     			openingFormLayout: "Opening Form Layout",
     			savingForm: "Saving Form",
     			savingFormLayout: "Saving Form Layout",
-    			refreshingForm: "Refresing Form",
+    			refreshingForm: "Refreshing Form",
     			translatingFormLanguage: "Translating Form Language",
     			savingLanguageText: "Saving Language Text",
     			refreshingDesignSurface: "Refreshing Design Surface",
@@ -239,7 +252,7 @@
     		    deleteTabPrompt: "Do you really want to delete this tab?",
 
     		    text: "Text",
-    		    toolTip: "Tooltip",
+    		    toolTip: "Help text (tooltip)",
     		    childBinding: "Child Binding",
     		    width: "Width",
     		    height: "Height",
@@ -247,7 +260,7 @@
     		    top: "Top",
     		    tabIndex: "Tab Index",
     		    repeat: "Repeat",
-    		    externalSource: "External Source",
+    		    externalSource: "DBA Stijl",
     		    displayField: "Display Field",
     		    valueField: "Value Field",
     		    fontFamily: "Font Family",
@@ -263,7 +276,7 @@
     		    borderColor: "Border Color",
     		    aboutMessage: "This is a form designer widget based on GWT",
     		    more: "More",
-    		    requiredErrorMsg: "Please answer this required question.",
+    		    requiredErrorMsg: "Gelieve dit verplicht veld in te vullen",
     		    questionTextDesc: "The question text.",
     		    questionDescDesc: "The question description.",
     		    questionIdDesc: "The question internal identifier. For Questions, it should be a valid xml node name.",
@@ -284,6 +297,11 @@
     		    qtnTypeVideo: "Video",
     		    qtnTypeAudio: "Audio",
     		    qtnTypeSingleSelectDynamic: "Single Select Dynamic",
+    		    
+    		    qtnTypeVolume: "Volume",
+    		    qtnTypeOppervlakte: "Oppervlakte",
+    		    qtnTypeGroup: "Groep",
+    		    
         		deleteCondition: "Delete Condition",
         		addCondition: "Add Condition",
         		value: "Value",
@@ -295,8 +313,8 @@
         		remove: "Remove",
         		browse: "Browse",
         		clear: "Clear",
-        		deleteItem: "Delete",
-        		cancel: "Cancel",
+           		deleteItem: "Verwijder",
+           		cancel: "Annuleer",
         		clickToAddNewCondition: "< Click here to add new condition >",
         		qtnTypeGPS: "GPS",
         		qtnTypeBarcode: "Barcode",
@@ -313,8 +331,8 @@
         		noSelection: "No Selection",
            		cancelFormPrompt: "Do you really want to Cancel and Discard changes on this form?",
            		print: "Print",
-           		yes: "Yes",
-           		no: "No",
+              	yes: "Ja",
+              	no: "Nee",
            		searchServer: "Search Server",
            		recording: "Recording",
            		search: "Search",
@@ -331,8 +349,8 @@
            		wrongFormat: "Wrong format. Expected format: ",
            		lockWidgets: "Lock",
            		unLockWidgets: "Unlock",
-           		changeWidgetH: "Change Widget H",
-           		changeWidgetV: "Change Widget V",
+           		changeWidgetH: "Change to Horizontal Radio Buttons",
+           		changeWidgetV: "Change to Vertical Radio Buttons",
            		saveAsPurcForm: "Save As PurcForm",
            		localeChangePrompt: "Changing locale will lead to loss of any unsaved changes. Do you want to go ahead and change?",
            		javaScriptSource: "JavaScript",
@@ -340,8 +358,10 @@
            		id: "ID",
            		formKey: "Form Key",
            		filterField: "Filter Field",
-           		
-           		invalidDefaultValueForQuestionType: "The default value specified is invalid with regard to the question type selected. It contains invalid characters like characters where numbers are expected. Please check to proceed!"
+           		rebuildBindings: "Rebuild Bindings",
+           		logo: "Logo",
+           		repeatChildDataNodeNotFound: "Please first save the form, and then refresh the Preview surface. Or check the question bindings on the properties tab.",
+           		selectedFormField: "Selected Form Field"
  		  };
 
 		  function isUserAuthenticated(){
@@ -353,15 +373,22 @@
 		  }
 
 		  function searchExternal(key,value,parentElement,textElement,valueElement,filterField){
-
+			  
 		  }
 
 		  function initialize(){
 			  
 		  }
+
+		  function getQuestionBinding(id, pos){
+			  return null;
+		  }
+
+		  function getOptionBinding(id, pos){
+			  return null;
+		  }
 		  
     </script>
     
   </body>
-  
 </html>

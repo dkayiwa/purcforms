@@ -1,4 +1,19 @@
-<module rename-to='SharedLib'>    
-      <!-- Source paths -->  
-	  <source path="client" />
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<module rename-to='SharedLib'>
+	<inherits name='com.google.gwt.user.User' />
+	<inherits name="com.google.gwt.xml.XML"/>
+	<inherits name='com.google.gwt.uibinder.UiBinder' />
+	<inherits name="com.google.gwt.i18n.I18N"/>
+	<inherits name="org.zenika.widget.DatePickerModule"/>
+
+	<extend-property name="locale" values="nl"/>
+<!--	<extend-property name="locale" values="fr"/>   -->
+	<set-property-fallback name="locale" value="nl"/>
+
+	<stylesheet src="gwt_defaults.css" />
+	<stylesheet src="elements.css" />
+	<stylesheet src="custom.css" />
+	<stylesheet src="dba.css" />
+	
+	<source path="client" />
 </module>

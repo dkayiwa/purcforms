@@ -1,6 +1,8 @@
 package org.purc.purcforms.client.widget;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.purc.purcforms.client.Context;
 import org.purc.purcforms.client.LeftPanel.Images;
@@ -12,9 +14,11 @@ import org.purc.purcforms.client.model.OptionDef;
 import org.purc.purcforms.client.model.QuestionDef;
 import org.purc.purcforms.client.util.FormDesignerUtil;
 import org.purc.purcforms.client.util.FormUtil;
+import org.purc.purcforms.client.util.StyleUtil;
 import org.purc.purcforms.client.xforms.XformConstants;
 
 import com.google.gwt.event.dom.client.HasAllMouseHandlers;
+import com.google.gwt.event.dom.client.HasAllTouchHandlers;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
@@ -27,6 +31,14 @@ import com.google.gwt.event.dom.client.MouseUpEvent;
 import com.google.gwt.event.dom.client.MouseUpHandler;
 import com.google.gwt.event.dom.client.MouseWheelEvent;
 import com.google.gwt.event.dom.client.MouseWheelHandler;
+import com.google.gwt.event.dom.client.TouchCancelEvent;
+import com.google.gwt.event.dom.client.TouchCancelHandler;
+import com.google.gwt.event.dom.client.TouchEndEvent;
+import com.google.gwt.event.dom.client.TouchEndHandler;
+import com.google.gwt.event.dom.client.TouchMoveEvent;
+import com.google.gwt.event.dom.client.TouchMoveHandler;
+import com.google.gwt.event.dom.client.TouchStartEvent;
+import com.google.gwt.event.dom.client.TouchStartHandler;
 import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
@@ -43,6 +55,7 @@ import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.TabBar;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.xml.client.Element;
 
@@ -54,12 +67,12 @@ import com.google.gwt.xml.client.Element;
  * @author daniel
  *
  */
-public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListener, HasAllMouseHandlers{
+public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListener, HasAllMouseHandlers, HasAllTouchHandlers {
 
 	private WidgetSelectionListener widgetSelectionListener;
 	private PopupPanel popup;
 	private Element layoutNode;
-
+	private Map<String, Integer> properties = new HashMap<String, Integer>();
 
 	public DesignWidgetWrapper(DesignWidgetWrapper designWidgetWrapper,Images images){
 		super(designWidgetWrapper);
@@ -76,6 +89,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		initWidget();
 	}
 
+	@Override
 	protected void copyWidget(WidgetEx widget){
 		if(widget.getWrappedWidget() instanceof DesignGroupWidget)
 			this.widget = new DesignGroupWidget((DesignGroupWidget)widget.getWrappedWidget(),((DesignGroupWidget)widget.getWrappedWidget()).getImages(),((DesignGroupWidget)widget.getWrappedWidget()).getWidgetPopupMenuListener());
@@ -87,6 +101,9 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			panel.add(widget);
 			initWidget(panel);
 			DOM.sinkEvents(getElement(),DOM.getEventsSunk(getElement()) | Event.MOUSEEVENTS | Event.ONCONTEXTMENU | Event.KEYEVENTS | Event.ONCHANGE);
+		}
+		if (widget instanceof RichTextAreaWidget) {
+			((RichTextAreaWidget) widget).setEnabled(false);
 		}
 	}
 
@@ -102,6 +119,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		initWidget();
 	}
 
+	@Override
 	public void onBrowserEvent(Event event) {
 		int type = DOM.eventGetType(event);
 		if((widget instanceof Label && panel.getWidget(0) instanceof TextBox))
@@ -147,8 +165,13 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 					xpos = event.getClientX() - 170;
 
 				widgetSelectionListener.onWidgetSelected(this,true);
-				popup.setPopupPosition(xpos, ypos);
-				popup.show();
+				
+				//DesignGroupWidget uses the design surface widget popup.
+				//Without this, you will get two popups on right clicking in group widgets
+				if(!(widget instanceof DesignGroupWidget)){
+					popup.setPopupPosition(xpos, ypos);
+					popup.show();
+				}
 
 				if(widget instanceof TextBox)
 					((TextBox)widget).setFocus(false);
@@ -201,7 +224,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 
 			if(!(widget instanceof CheckBox || widget instanceof RadioButton /*|| widget instanceof Label*/ /*|| widget instanceof Hyperlink*/)){
 
-				String cursorval = getDesignCursor(event.getClientX(),event.getClientY(),3);
+				String cursorval = getDesignCursor(event.getClientX(),event.getClientY(), 1);
 				if(Context.getLockWidgets())
 					cursorval = "pointer";
 
@@ -221,6 +244,19 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		if(!(widget instanceof DesignGroupWidget && type == Event.ONMOUSEMOVE)){
 			if(type != Event.ONMOUSEMOVE) //This lets firefox display tooltips on widget design surface
 				DOM.eventCancelBubble(event, true); //Without this, rubber band will draw
+		}
+
+		//This is to prevent ListBox drop down from expanding on mouse down.
+		if(widget instanceof ListBox && type == Event.ONMOUSEDOWN){
+			final com.google.gwt.user.client.Element senderElem = this.getElement();
+			int x = DOM.eventGetClientX(event)
+			- DOM.getAbsoluteLeft(senderElem)
+			+ DOM.getElementPropertyInt(senderElem, "scrollLeft")
+			+ Window.getScrollLeft();
+			int y = DOM.eventGetClientY(event)
+			- DOM.getAbsoluteTop(senderElem)
+			+ DOM.getElementPropertyInt(senderElem, "scrollTop")
+			+ Window.getScrollTop();
 		}
 	}
 
@@ -247,7 +283,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 				text = ((Button)widget).getText();
 			else
 				text = getText();
-			
+
 			/*if(!"100%".equals(width)){
 				com.google.gwt.dom.client.Element html = Document.get().getElementById("labelEdit");
 				html.getStyle().setProperty("fontSize", fontSize);
@@ -259,7 +295,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 				DOM.setStyleAttribute(html, "visibility","hidden");
 				DOM.setStyleAttribute(html, "height","auto");
 				DOM.setStyleAttribute(html, "width","auto");*/
-				/*DOM.setStyleAttribute(txtEdit.getElement(), "width", html.getClientWidth()+1+"px");
+			/*DOM.setStyleAttribute(txtEdit.getElement(), "width", html.getClientWidth()+1+"px");
 				System.out.println(html.getClientWidth());
 				System.out.println(html.getInnerHTML());
 			}*/
@@ -332,7 +368,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			panel.remove(0);
 			panel.add(widget);
 			if(!(widget instanceof TabBar))
-				restorePosition();
+				refreshPosition();
 			return true;
 		}
 		return false;
@@ -344,8 +380,8 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 
 		int left = getLeftInt();
 		int top = getTopInt();
-		int right = left + getWidthInt(); //element.getScrollWidth();
-		int bottom = top + getHeightInt(); //element.getScrollHeight();
+		int right = left + getWidthInt() + 10; //element.getScrollWidth();
+		int bottom = top + getHeightInt() + 4; //element.getScrollHeight();
 
 		//int incr = 3; //A smaller value than this does not resize, it instead moves.
 
@@ -372,21 +408,31 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		return "move";
 	}
 
+	@Override
 	public void setText(String text){
-		if(widget instanceof TabBar && text != null && text.trim().length() > 0)
+		if(widget instanceof TabBar && text != null && text.trim().length() > 0) {
 			setTabText(text);
-			/*//((TabBar)widget).setTabHTML(((TabBar)widget).getSelectedTab(), URL.encode(text));
+		/*//((TabBar)widget).setTabHTML(((TabBar)widget).getSelectedTab(), URL.encode(text));
 			((TabBar)widget).setTabHTML(((TabBar)widget).getSelectedTab(), "<span style='white-space:nowrap'>" + text + "</span>");*/
-		else
+		} else {
+			
+			if (widget instanceof Label) {
+				if (text == null || "".equals(text.trim())) {
+					text = "(label)";
+				}
+			}
 			super.setText(text);
+		}
 	}
 
+	@Override
 	public String getTitle(){
 		if(widget instanceof DesignGroupWidget)
 			return ((DesignGroupWidget)widget).getTitle();
 		return super.getTitle();
 	}
 
+	@Override
 	public void setTitle(String title){
 		if(widget instanceof DesignGroupWidget)
 			((DesignGroupWidget)widget).setTitle(title);
@@ -403,7 +449,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			return WidgetEx.WIDGET_TYPE_BUTTON;
 		else if(widget instanceof ListBox)
 			return WidgetEx.WIDGET_TYPE_LISTBOX;
-		else if(widget instanceof TextArea)
+		else if(widget instanceof TextArea || widget instanceof RichTextAreaWidget)
 			return WidgetEx.WIDGET_TYPE_TEXTAREA;
 		else if(widget instanceof DatePickerEx)
 			return WidgetEx.WIDGET_TYPE_DATEPICKER;
@@ -415,8 +461,12 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			return WidgetEx.WIDGET_TYPE_TEXTBOX;
 		else if(widget instanceof Label)
 			return WidgetEx.WIDGET_TYPE_LABEL;
-		else if(widget instanceof Image)
+		else if(widget instanceof Image){
+			if(getParent().getParent().getParent() instanceof VerticalPanel)
+				return WidgetEx.WIDGET_TYPE_LOGO;
+			
 			return WidgetEx.WIDGET_TYPE_IMAGE;
+		}
 		else if(widget instanceof Hyperlink)
 			return WidgetEx.WIDGET_TYPE_VIDEO_AUDIO;
 		else if(widget instanceof DesignGroupWidget)
@@ -424,6 +474,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		return null;
 	}
 
+	@Override
 	public void storePosition(){
 		super.storePosition();
 
@@ -449,6 +500,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		(x > right && x < left && y > bottom && y < top);
 	}
 
+	@Override
 	public int getTabIndex(){
 		//return tabIndex;
 		if(widget instanceof RadioButton)
@@ -461,6 +513,8 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			return ((ListBox)widget).getTabIndex();
 		else if(widget instanceof TextArea)
 			return ((TextArea)widget).getTabIndex();
+		else if(widget instanceof RichTextAreaWidget)
+			return ((RichTextAreaWidget)widget).getTabIndex();
 		else if(widget instanceof DatePickerEx)
 			return ((DatePickerEx)widget).getTabIndex();
 		else if(widget instanceof DateTimeWidget)
@@ -472,6 +526,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		return 0;
 	}
 
+	@Override
 	public void setTabIndex(int index){
 		this.tabIndex = index;
 
@@ -485,6 +540,8 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			((ListBox)widget).setTabIndex(index);
 		else if(widget instanceof TextArea)
 			((TextArea)widget).setTabIndex(index);
+		else if(widget instanceof RichTextAreaWidget)
+			((RichTextAreaWidget)widget).setTabIndex(index);
 		else if(widget instanceof DatePickerEx)
 			((DatePickerEx)widget).setTabIndex(index);
 		else if(widget instanceof DateTimeWidget)
@@ -557,7 +614,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		if(widget instanceof DesignGroupWidget){
 			((DesignGroupWidget)widget).buildLayoutXml(node, doc);
 
-			if(!isRepeated()){
+			if(!isRepeated() && questionDef.getDataType() != QuestionDef.QTN_TYPE_GROUP){
 				setBinding("LEFT"+getLeft()+"TOP"+getTop());
 				node.setAttribute(WidgetEx.WIDGET_PROPERTY_BINDING, binding);
 				DesignWidgetWrapper headerLabel = ((DesignGroupWidget)widget).getHeaderLabel();
@@ -588,7 +645,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			node.setAttribute(WidgetEx.WIDGET_PROPERTY_VALUEFIELD, value);
 		else
 			node.removeAttribute(WidgetEx.WIDGET_PROPERTY_VALUEFIELD);
-		
+
 		value = getFilterField();
 		if(value != null && value.trim().length() > 0)
 			node.setAttribute(WidgetEx.WIDGET_PROPERTY_FILTERFIELD, value);
@@ -746,7 +803,11 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 
 	public void onBindingChanged(QuestionDef sender,String newValue) {
 		setBinding(newValue);
+	}
 
+	@Override
+	public void onAttributeStateChanged(QuestionDef sender) {
+		setBinding(sender.getBinding());
 	}
 
 	public void onEnabledChanged(QuestionDef sender,boolean enabled) {
@@ -769,6 +830,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 
 	}	
 
+	@Override
 	public void onDataTypeChanged(QuestionDef sender,int dataType){
 		if(widget instanceof Label)
 			return; //We do not change labels into data input widgets.
@@ -801,7 +863,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 			}
 		}
 		else if(dataType == QuestionDef.QTN_TYPE_TEXT || dataType == QuestionDef.QTN_TYPE_NUMERIC || dataType == QuestionDef.QTN_TYPE_DECIMAL){
-			if(( !(widget instanceof TextBox || widget instanceof TextArea) || (widget instanceof DatePickerEx)) ){
+			if(( !(widget instanceof TextBox || widget instanceof TextArea || widget instanceof RichTextAreaWidget) || (widget instanceof DatePickerEx)) ){
 				storePosition();
 				panel.remove(widget);
 				widget = new TextBox();
@@ -856,6 +918,7 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		}
 	}
 
+	@Override
 	public void onOptionsChanged(QuestionDef sender,List<OptionDef> optionList){
 
 	}
@@ -884,104 +947,170 @@ public class DesignWidgetWrapper extends WidgetEx implements QuestionChangeListe
 		return widgetSelectionListener;
 	}
 
+	@Override
 	public HandlerRegistration addMouseDownHandler(MouseDownHandler handler) {
 		return addDomHandler(handler, MouseDownEvent.getType());
 	}
 
+	@Override
 	public HandlerRegistration addMouseMoveHandler(MouseMoveHandler handler) {
 		return addDomHandler(handler, MouseMoveEvent.getType());
 	}
 
+	@Override
 	public HandlerRegistration addMouseOutHandler(MouseOutHandler handler) {
 		return addDomHandler(handler, MouseOutEvent.getType());
 	}
 
+	@Override
 	public HandlerRegistration addMouseOverHandler(MouseOverHandler handler) {
 		return addDomHandler(handler, MouseOverEvent.getType());
 	}
 
+	@Override
 	public HandlerRegistration addMouseUpHandler(MouseUpHandler handler) {
 		return addDomHandler(handler, MouseUpEvent.getType());
 	}
 
+	@Override
 	public HandlerRegistration addMouseWheelHandler(MouseWheelHandler handler) {
 		return addDomHandler(handler, MouseWheelEvent.getType());
 	}
 	
+	@Override
+	public HandlerRegistration addTouchStartHandler(TouchStartHandler handler) {
+		return addDomHandler(handler, TouchStartEvent.getType());
+	}
+	
+	@Override
+	public HandlerRegistration addTouchMoveHandler(TouchMoveHandler handler) {
+		return addDomHandler(handler, TouchMoveEvent.getType());
+	}
+	
+	@Override
+	public HandlerRegistration addTouchEndHandler(TouchEndHandler handler) {
+		return addDomHandler(handler, TouchEndEvent.getType());
+	}
+	
+	@Override
+	public HandlerRegistration addTouchCancelHandler(TouchCancelHandler handler) {
+		return addDomHandler(handler, TouchCancelEvent.getType());
+	}
+	
+	public boolean supportsTabIndex(){
+		if(widget instanceof RadioButton || widget instanceof CheckBox || widget instanceof Button || 
+				widget instanceof ListBox || widget instanceof TextArea || widget instanceof RichTextAreaWidget || widget instanceof DatePickerEx || 
+				widget instanceof DateTimeWidget || widget instanceof TextBox || widget instanceof DesignGroupWidget)
+			return true;
+		
+		return false;
+	}
+
+	@Override
+	public void refreshPosition(){
+		setTop(getTop());
+		setLeft(getLeft());
+	}
+	
+	/**
+	 * setting a different style than widgetEx
+	 * @param externalSource
+	 */
+	@Override
+	public void setExternalSource(String externalSource){
+		if (this.externalSource != null && !"".equals(this.externalSource)) {
+			removeCssClass(this.externalSource);
+			removeCssClass(StyleUtil.DBASTYLE_LOCKED_DESIGN);
+		}
+		this.externalSource = externalSource;
+		if (this.externalSource != null && !"".equals(this.externalSource)) {
+			if (StyleUtil.DBASTYLE_LOCKED.equals(externalSource)) {
+				addCssClass(StyleUtil.DBASTYLE_LOCKED_DESIGN);
+			} else {
+				addCssClass(this.externalSource);
+			}
+		}
+	}
+
+	public Map<String, Integer> getProperties() {
+		return properties;
+	}
+
+	
 	/*public void setForeColor(String color){
 		super.setForeColor(color);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("color", color);
 	}
-	
-	
+
+
 	public void setFontWeight(String fontWeight){
 		super.setFontWeight(fontWeight);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("fontWeight", fontWeight);
 	}
 
 	public void setFontStyle(String fontStyle){
 		super.setFontStyle(fontStyle);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("fontStyle", fontStyle);
 	}
 
 	public void setFontSize(String fontSize){
 		super.setFontSize(fontSize);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("fontSize", fontSize);
 	}
-	
+
 	public void setFontFamily(String fontFamily){
 		super.setFontFamily(fontFamily);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("fontFamily", fontFamily);
 	}
-	
+
 	public void setTextDecoration(String textDecoration){
 		super.setTextDecoration(textDecoration);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("textDecoration", textDecoration);
 	}
-	
+
 	public void setTextAlign(String textAlign){
 		super.setTextAlign(textAlign);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("textAlign", textAlign);
 	}
-	
+
 	public void setBackgroundColor(String backgroundColor){
 		super.setBackgroundColor(backgroundColor);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("backgroundColor", backgroundColor);
 	}
-	
+
 	public void setBorderStyle(String borderStyle){
 		super.setBorderStyle(borderStyle);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("borderStyle", borderStyle);
 	}
-	
+
 	public void setBorderWidth(String borderWidth){
 		super.setBorderWidth(borderWidth);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("borderWidth", borderWidth);
 	}
-	
+
 	public void setBorderColor(String borderColor){
 		super.setBorderColor(borderColor);
-		
+
 		if(widget instanceof TabBar)
 			setTabStyle("borderColor", borderColor);
 	}*/

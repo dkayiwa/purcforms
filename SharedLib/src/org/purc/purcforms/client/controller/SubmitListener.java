@@ -16,7 +16,13 @@ public interface SubmitListener {
 	 * 
 	 * @param xml the xforms model filled with data.
 	 */
-	public void onSubmit(String xml);
+	public void onSubmit(String xml, boolean valid);
+	
+	/**
+	 * Called when submit failed, normally this is because validation is required & failed.
+	 * @param reason
+	 */
+	public void onSubmitFailed(String reason);
 	
 	/**
 	 * Called when one wants to close the form and discard all the data entered or

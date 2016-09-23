@@ -1,0 +1,41 @@
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder" xmlns:g="urn:import:com.google.gwt.user.client.ui">
+
+	<ui:style>
+		.close {
+			cursor: pointer;
+			cursor: hand;
+			font-weight: bold;
+			border: 1px solid #DDDDDD;
+			width: 14px;
+			height: 14px;
+			text-align: center;
+			line-height: 12px;
+			font-size: 12px;
+			border-radius: 3px;
+			-moz-border-radius: 3px;
+			padding: auto;
+		}
+		
+		.close:hover {
+			color: #444444;
+			border: 1px solid #CCCCCC;
+		}
+	</ui:style>
+
+	<g:HTMLPanel>
+		<table cellspacing="0" cellpadding="0">
+			<tr>
+				<td style="border-bottom: 1px solid #CCCCCC; padding-bottom: 5px; width: 100%;">
+					<h4 ui:field="titleElement" />
+				</td>
+				<td ui:field="closeElement" style="width: 14px; border-bottom: 1px solid #CCCCCC; padding-bottom: 5px;">
+					<g:SimplePanel ui:field="closeBtn" addStyleNames="{style.close}" />
+				</td>
+			</tr>
+			<tr>
+				<td ui:field="messageElement" style="padding-top: 5px;" colspan="2" />
+			</tr>
+		</table>
+	</g:HTMLPanel>
+
+</ui:UiBinder> 

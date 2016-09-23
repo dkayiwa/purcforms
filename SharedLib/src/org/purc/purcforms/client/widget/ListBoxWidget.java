@@ -1,5 +1,7 @@
 package org.purc.purcforms.client.widget;
 
+import org.purc.purcforms.client.util.FormUtil;
+
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
@@ -12,7 +14,7 @@ import com.google.gwt.user.client.ui.ListBox;
  * @author daniel
  *
  */
-public class ListBoxWidget extends ListBox{
+public class ListBoxWidget extends ListBox implements hasReadonly {
 	
 	/** 
 	 * This allows us keep track of the selected index such that we can restore it
@@ -22,6 +24,8 @@ public class ListBoxWidget extends ListBox{
 	 */
 	private int selectedIndex = -1;
 	
+	private boolean readonly = false;
+	
 	/**
 	 * Creates a new instance of the list box widget.
 	 * 
@@ -29,7 +33,12 @@ public class ListBoxWidget extends ListBox{
 	 */
 	public ListBoxWidget(boolean isMultipleSelect){
 		super(isMultipleSelect);
-	    sinkEvents(Event.getTypeInt(ChangeEvent.getType().getName()));
+		if (!FormUtil.isReadOnlyMode()) {
+			sinkEvents(Event.getTypeInt(ChangeEvent.getType().getName()));
+		} else {
+			setEnabled(false);
+			setReadOnly(true);
+		}
 	}
 
 	
@@ -46,12 +55,36 @@ public class ListBoxWidget extends ListBox{
 		super.onBrowserEvent(event);
 	}
 	
-	
-	/**
-	 * @see com.google.gwt.user.client.ui.ListBox#setSelectedIndex(int)
-	 */
+	@Override
 	public void setSelectedIndex(int index) {
 		 selectedIndex = index;
 		 super.setSelectedIndex(index);
 	}
+
+	@Override
+	public boolean isReadOnly() {
+		return readonly;
+	}
+
+	@Override
+	public void setReadOnly(boolean readOnly) {
+		readonly = readOnly;
+		String readOnlyStyle = "readonly";
+		if (readOnly) {
+			addStyleDependentName(readOnlyStyle);
+		} else {
+			removeStyleDependentName(readOnlyStyle);
+		}
+	}
+	
+	@Override
+	public void setEnabled(boolean enabled) {
+		super.setEnabled(enabled);
+		if (enabled) {
+			removeStyleDependentName("disabled");
+		} else {
+			addStyleDependentName("disabled");
+		}
+	}
+
 }

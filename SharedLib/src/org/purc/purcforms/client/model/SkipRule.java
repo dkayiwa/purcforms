@@ -1,10 +1,11 @@
 package org.purc.purcforms.client.model;
 
-import java.io.Serializable;
-import java.util.Vector;
-
+import org.purc.purcforms.client.util.FormUtil;
 import org.purc.purcforms.client.xforms.RelevantBuilder;
 import org.purc.purcforms.client.xforms.XformConstants;
+
+import java.io.Serializable;
+import java.util.Vector;
 
 
 /**
@@ -17,11 +18,6 @@ import org.purc.purcforms.client.xforms.XformConstants;
  */
 public class SkipRule implements Serializable{
 	
-	/**
-	 * Generated serialization ID.
-	 */
-	private static final long serialVersionUID = 2066689828085983853L;
-
 	/** The numeric identifier of a rule. This is assigned in code and hence
 	 * is not known by the user.
 	 */
@@ -30,7 +26,7 @@ public class SkipRule implements Serializable{
 	/** A list of conditions (Condition object) to be tested for a rule. 
 	 * E.g. If sex is Male. If age is greatern than 4. etc
 	 */
-	private Vector<Condition> conditions;
+	private Vector conditions;
 	
 	/** The action taken when conditions are true.
 	 * Example of actions are Disable, Hide, Show, etc
@@ -38,10 +34,10 @@ public class SkipRule implements Serializable{
 	private int action = ModelConstants.ACTION_NONE;
 	
 	/** A list of question identifiers (int) acted upon when conditions for the rule are true. */
-	private Vector<Integer> actionTargets;
+	private Vector actionTargets;
 		
 	/** Operator for combining more than one condition. (And, Or) only these two for now. */
-	private int conditionsOperator = ModelConstants.CONDITIONS_OPERATOR_NULL;
+	private int conditionsOperator = ModelConstants.CONDITIONS_OPERATOR_AND;
 	
 		
 	/** Constructs a rule object ready to be initialized. */
@@ -65,7 +61,7 @@ public class SkipRule implements Serializable{
 	 * @param action
 	 * @param actionTargets
 	 */
-	public SkipRule(int ruleId, Vector<Condition> conditions, int action, Vector<Integer> actionTargets /*, String name*/) {
+	public SkipRule(int ruleId, Vector conditions, int action, Vector actionTargets /*, String name*/) {
 		setId(ruleId);
 		setConditions(conditions);
 		setAction(action);
@@ -80,19 +76,19 @@ public class SkipRule implements Serializable{
 		this.action = action;
 	}
 
-	public Vector<Integer> getActionTargets() {
+	public Vector getActionTargets() {
 		return actionTargets;
 	}
 
-	public void setActionTargets(Vector<Integer> actionTargets) {
+	public void setActionTargets(Vector actionTargets) {
 		this.actionTargets = actionTargets;
 	}
 
-	public Vector<Condition> getConditions() {
+	public Vector getConditions() {
 		return conditions;
 	}
 
-	public void setConditions(Vector<Condition> conditions) {
+	public void setConditions(Vector conditions) {
 		this.conditions = conditions;
 	}
 
@@ -138,7 +134,7 @@ public class SkipRule implements Serializable{
 	
 	public void addActionTarget(int id){
 		if(actionTargets == null)
-			actionTargets = new Vector<Integer>();
+			actionTargets = new Vector();
 		actionTargets.add(new Integer(id));
 	}
 	
@@ -160,7 +156,7 @@ public class SkipRule implements Serializable{
 	
 	public void addCondition(Condition condition){
 		if(conditions == null)
-			conditions = new Vector<Condition>();
+			conditions = new Vector();
 		conditions.add(condition);
 	}
 	
@@ -174,6 +170,7 @@ public class SkipRule implements Serializable{
 		for(int i=0; i<conditions.size(); i++){
 			Condition cond = (Condition)conditions.elementAt(i);
 			if(cond.getId() == condition.getId()){
+				//cond.removeBindingChangeListeners(); //TODO This is buggy.
 				conditions.remove(i);
 				conditions.add(condition);
 				break;
@@ -182,15 +179,20 @@ public class SkipRule implements Serializable{
 	}
 	
 	public void removeCondition(Condition condition){
+		condition.removeBindingChangeListeners();
 		conditions.remove(condition);
 	}
 	
-	public void removeActionTarget(QuestionDef questionDef){
-		
+	public void removeActionTargetXformData(QuestionDef questionDef){
 		if(questionDef.getBindNode() != null){
 			questionDef.getBindNode().removeAttribute(XformConstants.ATTRIBUTE_NAME_RELEVANT);
 			questionDef.getBindNode().removeAttribute(XformConstants.ATTRIBUTE_NAME_ACTION);
 		}
+	}
+	
+	public void removeActionTarget(QuestionDef questionDef){
+		
+		removeActionTargetXformData(questionDef);
 		
 		for(int index = 0; index < getActionTargetCount(); index++){
 			Integer id = getActionTargetAt(index);
@@ -245,49 +247,66 @@ public class SkipRule implements Serializable{
 	}
 	
 	/** Executes the action of a rule for its conditition's true or false value. */
-	public void ExecuteAction(FormDef formDef,boolean conditionTrue){
-		Vector<Integer> qtns = this.getActionTargets();
+	public void ExecuteAction(FormDef formDef,boolean conditionTrue) {
+		Vector qtns = this.getActionTargets();
 		for(int i=0; i<qtns.size(); i++)
 			ExecuteAction(formDef.getQuestion(Integer.parseInt(qtns.elementAt(i).toString())),conditionTrue);
 	}
 	
 	/** Executes the rule action on the supplied question. */
-	public void ExecuteAction(QuestionDef qtn,boolean conditionTrue){
-		qtn.setVisible(true);
-		qtn.setEnabled(true);
-		qtn.setRequired(false);
+	public void ExecuteAction(QuestionDef qtn, boolean conditionTrue) {
+		if(qtn == null) { return; }
+		
+		// -- do not enable widgets in readOnly mode!
+		if(FormUtil.isReadOnlyMode() && 
+				((action & ModelConstants.ACTION_ENABLE) != 0 || 
+				(action & ModelConstants.ACTION_MAKE_MANDATORY) != 0)) {
+			return;
+		}
+		
+		//qtn.setVisible(true);
+		boolean enable = true;
+		boolean required = false;
 		
 		if((action & ModelConstants.ACTION_ENABLE) != 0)
-			qtn.setEnabled(conditionTrue);
+			enable = conditionTrue;
 		else if((action & ModelConstants.ACTION_DISABLE) != 0)
-			qtn.setEnabled(!conditionTrue);
+			enable = !conditionTrue;
 		else if((action & ModelConstants.ACTION_SHOW) != 0)
 			qtn.setVisible(conditionTrue);
 		else if((action & ModelConstants.ACTION_HIDE) != 0)
 			qtn.setVisible(!conditionTrue);
-		
-		if((action & ModelConstants.ACTION_MAKE_MANDATORY) != 0)
-			qtn.setRequired(conditionTrue);
+
+		if((action & ModelConstants.ACTION_MAKE_MANDATORY) != 0) {
+			required = conditionTrue;
+		}
+
+		qtn.setEnabled(enable);
+		qtn.setRequired(required);
 	}
 	
-	private void copyConditions(Vector<?> conditions){
-		this.conditions = new Vector<Condition>();
-		for(int i=0; i<conditions.size(); i++)
-			this.conditions.addElement(new Condition((Condition)conditions.elementAt(i)));
+	private void copyConditions(Vector conditions){
+		this.conditions = new Vector();
+		if (conditions != null) {
+			for(int i=0; i<conditions.size(); i++)
+				this.conditions.addElement(new Condition((Condition)conditions.elementAt(i)));
+		}
 	}
 	
-	private void copyActionTargets(Vector<Integer> actionTargets){
-		this.actionTargets = new Vector<Integer>();
-		for(int i=0; i<actionTargets.size(); i++)
-			this.actionTargets.addElement(new Integer(((Integer)actionTargets.elementAt(i)).intValue()));
+	private void copyActionTargets(Vector actionTargets){
+		this.actionTargets = new Vector();
+		if (actionTargets != null) {
+			for(int i=0; i<actionTargets.size(); i++)
+				this.actionTargets.addElement(new Integer(((Integer)actionTargets.elementAt(i)).intValue()));
+		}
 	}
 	
 	public void updateDoc(FormDef formDef){
-		RelevantBuilder.fromSkipRule2Xform(this,formDef);
+		RelevantBuilder.fromSkipRule2Xform(this, formDef);
 	}
 	
 	public void refresh(FormDef dstFormDef, FormDef srcFormDef){
-		SkipRule skipRule = new SkipRule();;
+		SkipRule skipRule = new SkipRule();
 		skipRule.setConditionsOperator(getConditionsOperator());
 		skipRule.setAction(getAction());
 		skipRule.setId(getId());

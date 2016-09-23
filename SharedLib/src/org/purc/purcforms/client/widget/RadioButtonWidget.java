@@ -1,5 +1,7 @@
 package org.purc.purcforms.client.widget;
 
+import org.purc.purcforms.client.util.FormUtil;
+
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -17,7 +19,7 @@ import com.google.gwt.user.client.ui.RadioButton;
  * @author daniel
  *
  */
-public class RadioButtonWidget extends RadioButton{
+public class RadioButtonWidget extends RadioButton implements hasReadonly {
 
 	/** Flag to tell whether this radio button is checked or not. */
 	private boolean checked = false;
@@ -28,9 +30,7 @@ public class RadioButtonWidget extends RadioButton{
 	 */
 	public RadioButtonWidget(String name){
 		super(name);
-		sinkEvents(Event.getTypeInt(ClickEvent.getType().getName()));
-		sinkEvents(Event.ONKEYUP);
-		addClickHandler(this);
+		init();
 	}
 
 
@@ -39,11 +39,20 @@ public class RadioButtonWidget extends RadioButton{
 	 */
 	public RadioButtonWidget(String name, String label){
 		super(name,label);
-
-		addClickHandler(this);
+		init();
 	}
 
-
+	private void init() {
+		if (!FormUtil.isReadOnlyMode()) {
+			sinkEvents(Event.getTypeInt(ClickEvent.getType().getName()));
+			sinkEvents(Event.ONKEYUP);
+			addClickHandler(this);
+		} else {
+			setEnabled(false);
+			setReadOnly(true);
+		}
+	}
+	
 	/**
 	 * Adds the click event handler for a radio button widget.
 	 * 
@@ -95,5 +104,21 @@ public class RadioButtonWidget extends RadioButton{
 		}
 
 		super.onBrowserEvent(event);
+	}
+	
+	@Override
+	public boolean isReadOnly() {
+		return DOM.getElementPropertyBoolean(getElement(), "readOnly");
+	}
+
+	@Override
+	public void setReadOnly(boolean readOnly) {
+		DOM.setElementPropertyBoolean(getElement(), "readOnly", readOnly);
+		String readOnlyStyle = "readonly";
+		if (readOnly) {
+			addStyleDependentName(readOnlyStyle);
+		} else {
+			removeStyleDependentName(readOnlyStyle);
+		}
 	}
 }

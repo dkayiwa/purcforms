@@ -70,4 +70,13 @@ public interface QuestionChangeListener {
 	 * @param optionList the new list of options.
 	 */
 	public void onOptionsChanged(QuestionDef sender,List<OptionDef> optionList);
+	
+	/**
+	 * 
+	 * @param sender
+	 * @param asAttribute
+	 * @param attributeBinding
+	 */
+	public void onAttributeStateChanged(QuestionDef sender);
+	
 }

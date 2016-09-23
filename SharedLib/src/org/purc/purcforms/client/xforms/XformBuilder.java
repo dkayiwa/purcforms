@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.Vector;
 
 import org.purc.purcforms.client.model.Calculation;
 import org.purc.purcforms.client.model.DynamicOptionDef;
@@ -87,6 +87,9 @@ public class XformBuilder {
 		instanceNode.setAttribute(XformConstants.ATTRIBUTE_NAME_ID, formDef.getBinding());
 		modelNode.appendChild(instanceNode);
 		formDef.setModelNode(modelNode);
+		
+		XformUtil.copyModelId(formDef.getDoc(), modelNode);
+		XformUtil.copyInstanceId(formDef.getDoc(), instanceNode);
 
 		//Create the form data node and add it to the instance node.
 		Element formNode =  doc.createElement(formDef.getBinding());
@@ -110,10 +113,10 @@ public class XformBuilder {
 		}
 
 		//Build relevant s for the skip rules.
-		Vector<?> rules = formDef.getSkipRules();
+		Vector rules = formDef.getSkipRules();
 		if(rules != null){
 			for(int i=0; i<rules.size(); i++)
-				RelevantBuilder.fromSkipRule2Xform((SkipRule)rules.elementAt(i), formDef);
+				RelevantBuilder.fromSkipRule2Xform((SkipRule)rules.elementAt(i),formDef);
 		}
 
 		//Build constraints for the validation rules.
@@ -131,7 +134,7 @@ public class XformBuilder {
 				continue;
 			Element node = questionDef.getBindNode() != null ? questionDef.getBindNode() : questionDef.getControlNode();
 			if(node != null)
-				node.setAttribute(XformConstants.ATTRIBUTE_NAME_CALCULATE, calculation.getCalculateExpression());
+				node.setAttribute(XformConstants.ATTRIBUTE_NAME_CALCULATE, calculation.getXmlSafeCalculateExpression());
 		}
 
 		//Build itemsets for dynamic option definition objects.
@@ -187,9 +190,30 @@ public class XformBuilder {
 			return;
 
 		//Create ui nodes for each question.
+		List<QuestionDef> attributes = new ArrayList<QuestionDef>();
 		for(int i=0; i<questions.size(); i++){
-			QuestionDef qtn = (QuestionDef)questions.elementAt(i);
-			UiElementBuilder.fromQuestionDef2Xform(qtn,doc,xformsNode,formDef,formNode,modelNode,groupNode);
+			QuestionDef qtn = questions.elementAt(i);
+			addAttributeQuestions(attributes, qtn);
+			UiElementBuilder.fromQuestionDef2Xform(qtn,doc,xformsNode,formDef,formNode,modelNode,groupNode, true);
+		}
+		
+		// set default values of attributes, can't do this before datanode is completely built
+		for (QuestionDef qtn : attributes) {
+			if (qtn.getDefaultValue() != null && !"".equals(qtn.getDefaultValue())) {
+				qtn.updateAttributeValue(formNode, qtn.getDefaultValue());
+			}
+		}
+	}
+	
+	private static void addAttributeQuestions(List<QuestionDef> attributes, QuestionDef qtn) {
+		if (attributes != null && qtn != null) {
+			if (QuestionDef.QTN_TYPE_GROUP == qtn.getDataType() || QuestionDef.QTN_TYPE_REPEAT == qtn.getDataType()) {
+				for (QuestionDef childQtn : qtn.getGroupQtnsDef().getQuestions()) {
+					addAttributeQuestions(attributes, childQtn);
+				}
+			} else if (qtn.isAsAttribute()) { 
+				attributes.add(qtn); 
+			}
 		}
 	}
 }

@@ -19,7 +19,7 @@ public interface IFormSaveListener {
 	 * @param javaScriptSrc the JavaScript source.
 	 * @return true if saving was successful, else false.
 	 */
-	public boolean onSaveForm(int formId, String xformsXml, String layoutXml, String javaScriptSrc);
+	public boolean onSaveForm(String formId, String xformsXml, String layoutXml, String javaScriptSrc);
 	
 	/**
 	 * Called to save a form's xforms and layout locale text.
@@ -28,5 +28,5 @@ public interface IFormSaveListener {
 	 * @param xformsLocaleText the xforms locale text.
 	 * @param layoutLocaleText the layout xml locale text.
 	 */
-	public void onSaveLocaleText(int formId, String xformsLocaleText, String layoutLocaleText);
+	public void onSaveLocaleText(String formId, String xformsLocaleText, String layoutLocaleText);
 }

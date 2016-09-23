@@ -3,14 +3,15 @@ package org.purc.purcforms.client.widget;
 import org.purc.purcforms.client.PurcConstants;
 import org.purc.purcforms.client.model.QuestionDef;
 import org.purc.purcforms.client.util.FormUtil;
-import org.zenika.widget.client.datePicker.DatePicker;
 
 import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.Focusable;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HasText;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Hyperlink;
 import com.google.gwt.user.client.ui.Image;
@@ -30,7 +31,7 @@ import com.google.gwt.xml.client.Element;
  * @author daniel
  *
  */
-public class WidgetEx extends Composite{
+public abstract class WidgetEx extends Composite implements Focusable {
 	
 	public static final String WIDGET_TYPE_CHECKBOX = "CheckBox";
 	public static final String WIDGET_TYPE_RADIOBUTTON = "RadioButton";
@@ -39,6 +40,7 @@ public class WidgetEx extends Composite{
 	public static final String WIDGET_TYPE_GROUPBOX = "GroupBox";
 	public static final String WIDGET_TYPE_BUTTON = "Button";
 	public static final String WIDGET_TYPE_REPEATSECTION = "RepeatSection";
+	public static final String WIDGET_TYPE_GROUPSECTION = "GroupSection";
 	public static final String WIDGET_TYPE_LISTBOX = "ListBox";
 	public static final String WIDGET_TYPE_LABEL = "Label";
 	public static final String WIDGET_TYPE_DATEPICKER = "DatePicker";
@@ -46,6 +48,7 @@ public class WidgetEx extends Composite{
 	public static final String WIDGET_TYPE_VIDEO_AUDIO = "VideoAudio";
 	public static final String WIDGET_TYPE_TIME = "TimeWidget";
 	public static final String WIDGET_TYPE_DATETIME = "DateTimeWidget";
+	public static final String WIDGET_TYPE_LOGO = "Logo";
 	
 	public static final String WIDGET_PROPERTY_TOP = "Top";
 	public static final String WIDGET_PROPERTY_LEFT = "Left";
@@ -64,6 +67,7 @@ public class WidgetEx extends Composite{
 	public static final String WIDGET_PROPERTY_REPEATED = "Repeated";
 	public static final String WIDGET_PROPERTY_TEXT_ALIGN = "TextAlign";
 	public static final String WIDGET_PROPERTY_HEADER_LABEL = "HeaderLabel";
+	// public static final String WIDGET_PROPERTY_CSSCLASS = "CssClass";
 	
 	public static final String WIDGET_PROPERTY_BACKGROUND_COLOR = "backgroundColor";
 	
@@ -97,6 +101,9 @@ public class WidgetEx extends Composite{
 	protected String displayField;
 	protected String valueField;
 	protected String filterField;
+	
+	// -- tooltip --
+	protected String title; // helpText;
 	
 	protected boolean isRepeated = false;
 	
@@ -143,7 +150,8 @@ public class WidgetEx extends Composite{
 		this.parentBinding = widget.parentBinding;
 		this.binding = widget.binding;
 		this.tabIndex = widget.tabIndex;
-		this.externalSource = widget.externalSource;
+		//this.externalSource = widget.externalSource;
+		setExternalSource(widget.externalSource);
 		this.displayField = widget.displayField;
 		this.valueField = widget.valueField;
 		this.filterField = widget.filterField;
@@ -166,6 +174,8 @@ public class WidgetEx extends Composite{
 		
 		setTitle(widget.getTitle());
 		setText(widget.getText());
+		
+		// setClassNames(widget.getElement().getClassName());
 	}
 	
 	protected void copyWidget(WidgetEx widget){
@@ -179,6 +189,8 @@ public class WidgetEx extends Composite{
 			this.widget = new ListBox(((ListBox)widget.widget).isMultipleSelect());
 		else if(widget.widget instanceof TextArea)
 			this.widget = new TextArea();
+		else if(widget.widget instanceof RichTextAreaWidget)
+			this.widget = new RichTextAreaWidget();
 		else if(widget.widget instanceof DatePickerEx)
 			this.widget = new DatePickerWidget();
 		else if(widget.widget instanceof DateTimeWidget)
@@ -218,8 +230,8 @@ public class WidgetEx extends Composite{
 			return ((Button)widget).getText();
 		else if(widget instanceof Label)
 			return ((Label)widget).getText();
-		else if(widget instanceof TextArea)
-			return ((TextArea)widget).getText();
+		else if(widget instanceof TextArea || widget instanceof RichTextAreaWidget)
+			return ((HasText)widget).getText();
 		else if(widget instanceof TextBox)
 			return ((TextBox)widget).getText();
 		else if(widget instanceof Hyperlink)
@@ -241,8 +253,8 @@ public class WidgetEx extends Composite{
 			((Button)widget).setText(text);
 		else if(widget instanceof Label)
 			((Label)widget).setText(text);
-		else if(widget instanceof TextArea)
-			((TextArea)widget).setText(text);
+		else if(widget instanceof TextArea || widget instanceof RichTextAreaWidget)
+			((HasText)widget).setText(text);
 		else if(widget instanceof TextBox)
 			((TextBox)widget).setText(text);
 		else if(widget instanceof Hyperlink)
@@ -252,54 +264,37 @@ public class WidgetEx extends Composite{
 
 	}
 	
+	@Override
 	public String getTitle(){
-		if(widget instanceof RadioButton)
-			return ((RadioButton)widget).getTitle();
-		else if(widget instanceof CheckBox)
-			return ((CheckBox)widget).getTitle();
-		else if(widget instanceof Button)
-			return ((Button)widget).getTitle();
-		else if(widget instanceof ListBox)
-			return ((ListBox)widget).getTitle();
-		else if(widget instanceof TextArea)
-			return ((TextArea)widget).getTitle();
-		else if(widget instanceof DatePicker)
-			return ((DatePicker)widget).getTitle();
-		else if(widget instanceof TextBox)
-			return ((TextBox)widget).getTitle();
-		else if(widget instanceof Label)
-			return ((Label)widget).getTitle();
-		else if(widget instanceof Image)
-			return ((Image)widget).getTitle();
-		else if(widget instanceof Hyperlink)
-			return ((Hyperlink)widget).getTitle();
-		return null;
+		return this.title;
+//		if(widget instanceof RadioButton)
+//			return ((RadioButton)widget).getTitle();
+//		else if(widget instanceof CheckBox)
+//			return ((CheckBox)widget).getTitle();
+//		else if(widget instanceof Button)
+//			return ((Button)widget).getTitle();
+//		else if(widget instanceof ListBox)
+//			return ((ListBox)widget).getTitle();
+//		else if(widget instanceof TextArea)
+//			return ((TextArea)widget).getTitle();
+//		else if(widget instanceof DatePicker)
+//			return ((DatePicker)widget).getTitle();
+//		else if(widget instanceof TextBox)
+//			return ((TextBox)widget).getTitle();
+//		else if(widget instanceof Label)
+//			return ((Label)widget).getTitle();
+//		else if(widget instanceof Image)
+//			return ((Image)widget).getTitle();
+//		else if(widget instanceof Hyperlink)
+//			return ((Hyperlink)widget).getTitle();
+//		return null;
+	}
+	
+	@Override
+	public void setTitle(String title) {
+		this.title = title; // not calling super (== no tooltip)
 	}
 
-	
-	public void setTitle(String title){
-		if(widget instanceof RadioButton)
-			((RadioButton)widget).setTitle(title);
-		else if(widget instanceof CheckBox)
-			((CheckBox)widget).setTitle(title);
-		else if(widget instanceof Button)
-			((Button)widget).setTitle(title);
-		else if(widget instanceof ListBox)
-			((ListBox)widget).setTitle(title);
-		else if(widget instanceof TextArea)
-			((TextArea)widget).setTitle(title);
-		else if(widget instanceof DatePicker)
-			((DatePicker)widget).setTitle(title);
-		else if(widget instanceof TextBox)
-			((TextBox)widget).setTitle(title);
-		else if(widget instanceof Label)
-			((Label)widget).setTitle(title);
-		else if(widget instanceof Image)
-			((Image)widget).setTitle(title);
-		else if(widget instanceof Hyperlink)
-			((Hyperlink)widget).setTitle(title);
-	}
-	
 	public Widget getWrappedWidget(){
 		return widget;
 	}
@@ -307,7 +302,22 @@ public class WidgetEx extends Composite{
 	public Widget getWrappedWidgetEx(){
 		return panel.getWidget(0);
 	}
-	
+
+	public void addCssClass(String cssClassName) {
+		if (widget != null && widget.getElement() != null && cssClassName != null) {
+			widget.getElement().addClassName(cssClassName);
+		}
+		// getElement().addClassName(cssClassName);
+	}
+
+	public void removeCssClass(String cssClassName) {
+		if (widget != null && widget.getElement() != null && cssClassName != null) {
+			widget.getElement().removeClassName(cssClassName);
+		}
+		// getElement().removeClassName(cssClassName);
+	}
+
+	@Override
 	public void setWidth(String width){
 		if("100%".equalsIgnoreCase(this.width)) //Temporary hack for group header label which should always have a width of 100%
 			return;
@@ -317,6 +327,7 @@ public class WidgetEx extends Composite{
 		this.width = width;
 	}
 
+	@Override
 	public void setHeight(String height){
 		DOM.setStyleAttribute(widget.getElement(), "height",height);
 		this.height = height;
@@ -690,7 +701,7 @@ public class WidgetEx extends Composite{
 		height = getHeight();
 	}
 	
-	public void restorePosition(){
+	public void refreshPosition(){
 		setLeft(left);
 		setTop(top);
 		setWidth(width);
@@ -706,8 +717,23 @@ public class WidgetEx extends Composite{
 		return externalSource;
 	}
 	
+	/**
+	 * TODO FIXME -- hacking css style in here (should use separate property
+	 * @param externalSource
+	 */
 	public void setExternalSource(String externalSource){
+		if (this.externalSource != null && !"".equals(this.externalSource)) {
+			removeCssClass(this.externalSource);
+		}
 		this.externalSource = externalSource;
+		if (this.externalSource != null && !"".equals(this.externalSource)) {
+			addCssClass(this.externalSource);
+		}
+	}
+	
+	public void updateStyle() {
+		removeCssClass(externalSource);
+		addCssClass(externalSource);
 	}
 	
 	public String getDisplayField(){
@@ -774,12 +800,17 @@ public class WidgetEx extends Composite{
 		DOM.setStyleAttribute(getElement(), "top",sTop);
 	}
 	
+	@Override
 	public int getTabIndex(){
 		return tabIndex;
 	}
 	
+	@Override
 	public void setTabIndex(int tabIndex){
 		this.tabIndex = tabIndex;
+		if (widget instanceof Focusable) {
+			((Focusable) widget).setTabIndex(tabIndex);
+		}
 	}
 	
 	public int getWidthInt(){
@@ -798,19 +829,19 @@ public class WidgetEx extends Composite{
 		return FormUtil.convertDimensionToInt(getTop());
 	}
 	
-	public void setWidthInt(int width){
+	public void setWidthInt(long width){
 		setWidth(width+PurcConstants.UNITS);
 	}
 
-	public void setHeightInt(int height){
+	public void setHeightInt(long height){
 		setHeight(height+PurcConstants.UNITS);
 	}
 
-	public void setLeftInt(int left){
+	public void setLeftInt(long left){
 		setLeft(left+PurcConstants.UNITS);
 	}
 
-	public void setTopInt(int top){
+	public void setTopInt(long top){
 		setTop(top+PurcConstants.UNITS);
 	}
 	
@@ -821,7 +852,6 @@ public class WidgetEx extends Composite{
 	public String getId(){
 		return id;
 	}
-	
 	
 	public static String getTabDisplayText(String html){
 		if(html.indexOf("&lt") > 0)
@@ -856,5 +886,29 @@ public class WidgetEx extends Composite{
 		html.getElement().setAttribute("style", style);	
 		((TabBar)widget).setTabHTML(((TabBar)widget).getSelectedTab(), html.toString().replace("div", "span"));
 		//System.out.println(((TabBar)widget).getTabHTML(((TabBar)widget).getSelectedTab()));	
+	}
+	
+	/**
+	 * Checks if the selected widget should have a parent binding property.
+	 * 
+	 * @return true if yes, else false.
+	 */
+	public boolean hasParentBinding(){
+		return (widget instanceof RadioButton) || (widget instanceof CheckBox)
+		|| (widget instanceof Button);
+	}
+
+	@Override
+	public void setAccessKey(char key) {
+		if (widget != null && widget instanceof Focusable) {
+			((Focusable) widget).setAccessKey(key);
+		}
+	}
+
+	@Override
+	public void setFocus(boolean focused) {
+		if (widget != null && widget instanceof Focusable) {
+			((Focusable) widget).setFocus(focused);
+		}
 	}
 }

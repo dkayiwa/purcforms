@@ -1,7 +1,10 @@
 package org.purc.purcforms.client.widget;
 
-import org.purc.purcforms.client.PurcConstants;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.purc.purcforms.client.LeftPanel.Images;
+import org.purc.purcforms.client.PurcConstants;
 import org.purc.purcforms.client.controller.DragDropListener;
 import org.purc.purcforms.client.controller.IWidgetPopupMenuListener;
 import org.purc.purcforms.client.controller.WidgetSelectionListener;
@@ -65,7 +68,7 @@ public class DesignGroupWidget extends DesignGroupView implements DragDropListen
 		initWidget(selectedPanel);
 
 		addStyleName("getting-started-label2");
-
+		
 		DOM.sinkEvents(getElement(),DOM.getEventsSunk(getElement()) | Event.MOUSEEVENTS | Event.KEYEVENTS);
 
 		setupPopup();
@@ -87,6 +90,10 @@ public class DesignGroupWidget extends DesignGroupView implements DragDropListen
 
 		menuBar.addItem(FormDesignerUtil.createHeaderHTML(images.add(),LocaleText.get("changeWidgetV")),true, new Command(){
 			public void execute() {widgetPopup.hide(); changeWidget(true);}});
+		
+		menuBar.addSeparator();
+		menuBar.addItem(FormDesignerUtil.createHeaderHTML(images.addchild(),LocaleText.get("groupWidgets")),true,new Command(){
+			public void execute() {widgetPopup.hide(); groupWidgets();}});
 
 		widgetPopup.setWidget(menuBar);
 
@@ -121,6 +128,16 @@ public class DesignGroupWidget extends DesignGroupView implements DragDropListen
 		}
 		
 		widgetSelectionListener = designGroupWidget.widgetSelectionListener;
+	}
+	
+	public List<DesignWidgetWrapper> getDesignWidgetWrappers() {
+		List<DesignWidgetWrapper> widgets = new ArrayList<DesignWidgetWrapper>();
+		for (Widget w : selectedPanel) {
+			if (w instanceof DesignWidgetWrapper) {
+				widgets.add((DesignWidgetWrapper) w);
+			}
+		}
+		return widgets;
 	}
 
 	public Images getImages(){
@@ -178,6 +195,9 @@ public class DesignGroupWidget extends DesignGroupView implements DragDropListen
 
 		addControlMenu.addItem(FormDesignerUtil.createHeaderHTML(images.addchild(),LocaleText.get("repeatSection")),true,new Command(){
 			public void execute() {popup.hide(); addNewRepeatSection(true);}});
+
+		addControlMenu.addItem(FormDesignerUtil.createHeaderHTML(images.addchild(),LocaleText.get("groupSection")),true,new Command(){
+			public void execute() {popup.hide(); addNewGroupSection(true);}});
 
 		addControlMenu.addItem(FormDesignerUtil.createHeaderHTML(images.addchild(),LocaleText.get("picture")),true,new Command(){
 			public void execute() {popup.hide(); addNewPicture();}});
@@ -256,6 +276,7 @@ public class DesignGroupWidget extends DesignGroupView implements DragDropListen
 		popup.setWidget(menuBar);
 	}
 
+	@Override
 	protected void updatePopup(){
 		super.updatePopup();
 
@@ -372,8 +393,12 @@ public class DesignGroupWidget extends DesignGroupView implements DragDropListen
 			if(widget != null && (widget.getWrappedWidget() instanceof DesignGroupWidget)){
 				((DesignGroupWidget)widget.getWrappedWidget()).loadWidgets(element,formDef);
 				((DesignGroupWidget)widget.getWrappedWidget()).setWidgetSelectionListener(currentWidgetSelectionListener); //TODO CHECK
-				if(!widget.isRepeated())
-					selectedDragController.makeDraggable(widget, ((DesignGroupWidget)widget.getWrappedWidget()).getHeaderLabel());
+				if(!widget.isRepeated()) {
+					Widget target = ((DesignGroupWidget)widget.getWrappedWidget()).getHeaderLabel();
+					if (target != null) {
+						selectedDragController.makeDraggable(widget, target);
+					}
+				}
 			}
 		}
 	}

@@ -5,21 +5,25 @@ import java.util.List;
 
 import org.purc.purcforms.client.locale.LocaleText;
 import org.purc.purcforms.client.model.Locale;
+import org.purc.purcforms.client.model.ModelConstants;
 import org.purc.purcforms.client.util.FormDesignerUtil;
 import org.purc.purcforms.client.util.FormUtil;
+import org.purc.purcforms.client.view.SaveFileDialog;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.event.logical.shared.ResizeEvent;
 import com.google.gwt.event.logical.shared.ResizeHandler;
 import com.google.gwt.user.client.Command;
-import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.Window.ClosingEvent;
+import com.google.gwt.user.client.Window.ClosingHandler;
 import com.google.gwt.user.client.ui.RootPanel;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class FormDesignerEntryPoint implements EntryPoint ,ResizeHandler{
+public class FormDesignerEntryPoint implements EntryPoint, ResizeHandler, ClosingHandler {
 
 	/**
 	 * Reference to the form designer widget.
@@ -30,20 +34,20 @@ public class FormDesignerEntryPoint implements EntryPoint ,ResizeHandler{
 	 * This is the GWT entry point method.
 	 */
 	public void onModuleLoad() {
-		
+
 		FormUtil.dlg.setText(LocaleText.get("loading"));
 		FormUtil.dlg.center();
-		
+
 		publishJS();
 
-		DeferredCommand.addCommand(new Command() {
+		Scheduler.get().scheduleDeferred(new Command() {
 			public void execute() {
 				onModuleLoadDeffered();
 			}
 		});		
 	}
 
-	
+
 	/**
 	 * Sets up the form designer.
 	 */
@@ -57,6 +61,8 @@ public class FormDesignerEntryPoint implements EntryPoint ,ResizeHandler{
 			}
 
 			FormUtil.setupUncaughtExceptionHandler();
+			
+			FormUtil.initialize();
 
 			FormDesignerUtil.setDesignerTitle();
 
@@ -65,7 +71,7 @@ public class FormDesignerEntryPoint implements EntryPoint ,ResizeHandler{
 				Context.setAllowBindEdit(false);
 
 			FormUtil.retrieveUserDivParameters();
-			
+
 			Context.setOfflineModeStatus();
 
 			// Get rid of scrollbars, and clear out the window's built-in margin,
@@ -82,100 +88,128 @@ public class FormDesignerEntryPoint implements EntryPoint ,ResizeHandler{
 			RootPanel.getBodyElement().getStyle().setProperty("display", "");
 
 			loadLocales();
-			
+
 			designer = new FormDesignerWidget(true,true,true);
-			
+
 			// Finally, add the designer widget to the RootPanel, so that it will be displayed.
 			rootPanel.add(designer);
-			
+
 			updateTabs();
-			
+
 			//If a form id has been specified in the html host page, load the form
 			//with that id in the designer.
 			s = FormUtil.getFormId();
 			if(s != null)
-				designer.loadForm(Integer.parseInt(s));
-			
+				designer.loadForm(getFormId(s));
+
 
 			// Call the window resized handler to get the initial sizes setup. Doing
 			// this in a deferred command causes it to occur after all widgets' sizes
 			// have been computed by the browser.
-			DeferredCommand.addCommand(new Command() {
+			Scheduler.get().scheduleDeferred(new Command() {
 				public void execute() {
 					designer.onWindowResized(Window.getClientWidth(), Window.getClientHeight());
-					
+
 					String id = FormUtil.getFormId();
-					if(id == null || id.equals("-1"))
+					if(id == null || ModelConstants.NO_FORMID.equals(id))
 						FormUtil.dlg.hide();
 				}
 			});
 			
 			// Hook the window resize event, so that we can adjust the UI.
 			Window.addResizeHandler(this);
+			
+			// Prevent the user from closing accidentally and lose unsaved changes.
+			Window.addWindowClosingHandler(this);
 		}
 		catch(Exception ex){
 			FormUtil.displayException(ex);
 		}
 	}
-	
+
+	private String getFormId(String sId){
+		if (sId == null || "".equals(sId)) {
+			return ModelConstants.NO_FORMID;
+		} else {
+			return sId.trim();
+		}
+	}
+
 	private void updateTabs(){
 		String s = FormUtil.getDivValue("showXformsSourceTab");
 		if(!("1".equals(s) || "true".equals(s)))
 			designer.removeXformSourceTab();
-		
+
 		s = FormUtil.getDivValue("showLayoutXmlTab");
 		if(!("1".equals(s) || "true".equals(s)))
 			designer.removeLayoutXmlTab();
-		
+
 		s = FormUtil.getDivValue("showLanguageTab");
 		if(!("1".equals(s) || "true".equals(s)))
 			designer.removeLanguageTab();
-		
+
 		s = FormUtil.getDivValue("showModelXmlTab");
 		if(!("1".equals(s) || "true".equals(s)))
 			designer.removeModelXmlTab();
-		
+
 		s = FormUtil.getDivValue("showJavaScriptTab");
 		if(!("1".equals(s) || "true".equals(s)))
 			designer.removeJavaScriptTab();
+		
+		s = FormUtil.getDivValue("showDesignSurfaceTab");
+		if(!("1".equals(s) || "true".equals(s)))
+			designer.removeDesignSurfaceTab();
+		
+		s = FormUtil.getDivValue("showPreviewTab");
+		if(!("1".equals(s) || "true".equals(s)))
+			designer.removePreviewTab();
 	}
-	
+
 	public void onResize(ResizeEvent event){
 		designer.onWindowResized(event.getWidth(), event.getHeight());
 	}
-	
+
 	// Set up the JS-callable signature as a global JS function.
 	private native void publishJS() /*-{
    		$wnd.authenticationCallback = @org.purc.purcforms.client.controller.FormDesignerController::authenticationCallback(Z);
    		$wnd.submitForm = @org.purc.purcforms.client.view.FormRunnerView::submitForm();
 	}-*/;
-	
-	
+
+
 	/**
 	 * Loads a list of locales supported by the form designer.
 	 */
 	private void loadLocales(){
 		String localesList = FormUtil.getDivValue("localeList");
-		
+
 		if(localesList == null || localesList.trim().length() == 0)
 			return;
-		
+
 		String[] tokens = localesList.split(",");
 		if(tokens == null || tokens.length == 0)
 			return;
-		
+
 		List<Locale> locales = new ArrayList<Locale>();
-		
+
 		for(String token: tokens){
 			int index = token.indexOf(':');
-			
+
 			//Should at least have one character for key or name
 			if(index < 1 || index == token.length() - 1)
 				continue;
-			
+
 			locales.add(new Locale(token.substring(0,index).trim(),token.substring(index+1).trim()));
 		}
+
+		//Set the first locale as the default one.
+		Context.setDefaultLocale(locales.get(0));
+		Context.setLocale(Context.getDefaultLocale());
 		
 		Context.setLocales(locales);
+	}
+	
+	public void onWindowClosing(ClosingEvent event){
+		if(SaveFileDialog.isWarnOnClose())
+			event.setMessage("");
 	}
 }

@@ -3,21 +3,23 @@ package org.purc.purcforms.client.view;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.purc.purcforms.client.Context;
+import org.purc.purcforms.client.CenterPanel;
 import org.purc.purcforms.client.Toolbar;
 import org.purc.purcforms.client.controller.ICenterPanel;
 import org.purc.purcforms.client.controller.SubmitListener;
 import org.purc.purcforms.client.locale.LocaleText;
+import org.purc.purcforms.client.model.FormDef;
 import org.purc.purcforms.client.util.FormDesignerUtil;
 import org.purc.purcforms.client.util.FormUtil;
 import org.purc.purcforms.client.widget.RuntimeWidgetWrapper;
 import org.purc.purcforms.client.xforms.XformBuilder;
+import org.purc.purcforms.client.xforms.XformParser;
 import org.purc.purcforms.client.xforms.XformUtil;
 
+import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.resources.client.ImageResource;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.AbsolutePanel;
@@ -57,6 +59,10 @@ public class PreviewView extends FormRunnerView {
 
 		popup = new PopupPanel(true,true);
 		MenuBar menuBar = new MenuBar(true);
+		menuBar.addItem(FormDesignerUtil.createHeaderHTML(images.open(),LocaleText.get("loadData")),true,new Command(){
+			public void execute() {popup.hide(); loadData();}});
+
+		menuBar.addSeparator();
 		menuBar.addItem(FormDesignerUtil.createHeaderHTML(images.refresh(),LocaleText.get("refresh")),true,new Command(){
 			public void execute() {popup.hide(); refresh();}});
 
@@ -71,7 +77,7 @@ public class PreviewView extends FormRunnerView {
 		DOM.sinkEvents(getElement(),DOM.getEventsSunk(getElement()) | Event.ONMOUSEDOWN);
 
 		//This is needed for IE
-		DeferredCommand.addCommand(new Command() {
+		Scheduler.get().scheduleDeferred(new Command() {
 			public void execute() {
 				setHeight(getHeight());
 			}
@@ -96,7 +102,7 @@ public class PreviewView extends FormRunnerView {
 		selectedPanel = panel;
 
 		//This is needed for IE
-		DeferredCommand.addCommand(new Command() {
+		Scheduler.get().scheduleDeferred(new Command() {
 			public void execute() {
 				setHeight(getHeight());
 			}
@@ -109,14 +115,16 @@ public class PreviewView extends FormRunnerView {
 			if(formDef.getDoc() == null)
 				XformBuilder.fromFormDef2Xform(formDef);
 
-			saveValues();
-
 			if(!isValid(false))
 				return;
 
+			saveValues(); // Do not save before validation! (because dataNode will be cleaned up & not restored)
+
 			String xml = XformUtil.getInstanceDataDoc(formDef.getDoc()).toString();
-			xml = FormDesignerUtil.formatXml(xml); //"<?xml version='1.0' encoding='UTF-8' ?> " +
-			submitListener.onSubmit(xml);
+			// xml = FormUtil.formatXml(xml); //"<?xml version='1.0' encoding='UTF-8' ?> " +
+			submitListener.onSubmit(xml, true);
+			
+			refresh(); // reset form
 		}
 	}
 	
@@ -176,21 +184,68 @@ public class PreviewView extends FormRunnerView {
 		FormUtil.dlg.setText(LocaleText.get("refreshingPreview"));
 		FormUtil.dlg.center();
 
-		DeferredCommand.addCommand(new Command(){
+		Scheduler.get().scheduleDeferred(new Command(){
 			public void execute() {
-				try{
-					centerPanel.commitChanges();
-					List<RuntimeWidgetWrapper> externalSourceWidgets = new ArrayList<RuntimeWidgetWrapper>();
-					if(Context.isOfflineMode())
-						;//externalSourceWidgets = null;
-					loadForm(centerPanel.getFormDef(), designSurfaceView.getLayoutXml(),centerPanel.getJavaScriptSource(),externalSourceWidgets,true);
-					FormUtil.dlg.hide();
-				}
-				catch(Exception ex){
-					FormUtil.displayException(ex);
-				}
+				refreshNow();
 			}
 		});
+	}
+	
+	public void refreshNow() {
+		try{
+			centerPanel.commitChanges();
+			List<RuntimeWidgetWrapper> externalSourceWidgets = new ArrayList<RuntimeWidgetWrapper>();
+//			if(Context.isOfflineMode())
+//				;//externalSourceWidgets = null;
+			loadForm(centerPanel.getFormDef(), designSurfaceView.getLayoutXml(), centerPanel.getJavaScriptSource(), externalSourceWidgets, true);
+			FormUtil.dlg.hide();
+		}
+		catch(Exception ex){
+			FormUtil.displayException(ex);
+		}
+	}
+	
+	/**
+	 * loads data from the model-panel
+	 */
+	public void loadData() {
+		String modelXml = ((CenterPanel) centerPanel).getModelXml();
+		if (modelXml != null) { modelXml = modelXml.trim(); }
+		if (modelXml != null && !"".equals(modelXml)) {
+			FormUtil.dlg.setText(LocaleText.get("refreshingPreview"));
+			FormUtil.dlg.center();
+			try {
+				List<RuntimeWidgetWrapper> externalSourceWidgets = new ArrayList<RuntimeWidgetWrapper>();
+				loadForm(formDef, designSurfaceView.getLayoutXml(), centerPanel.getJavaScriptSource(), externalSourceWidgets, true, modelXml);
+
+			} catch(Exception ex) {
+				FormUtil.displayException(ex);
+			}
+			FormUtil.dlg.hide();
+			
+		} else {
+			Window.alert("Geen data gevonden. plak of schrijf uw data op het Model tabblad vooraleer deze actie uit te voeren.");
+		}
+	}
+	
+	public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets, boolean previewMode, String modelXml) {
+		FormDef fd = null;
+		if (modelXml != null) {	// loading data
+			fd = XformParser.copyFormDef(formDef);
+			XformParser.loadDataNode(fd, modelXml);
+			previewMode = false; // if previewmode is set, data will be overwritten! so we copy it first ourselves
+		} else {
+			fd = formDef;
+		}
+		loadForm(fd, layoutXml, javaScriptSrc, externalSourceWidgets, previewMode);
+	}
+
+	@Override
+	public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets, boolean previewMode) {
+		super.loadForm(formDef, layoutXml, javaScriptSrc, externalSourceWidgets, previewMode);
+		if(this.formDef.getDoc() == null) {
+			XformBuilder.fromFormDef2Xform(this.formDef);
+		}
 	}
 
 	/**

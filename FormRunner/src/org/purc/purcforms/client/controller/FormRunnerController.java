@@ -79,7 +79,7 @@ public class FormRunnerController implements SubmitListener{
 		DeferredCommand.addCommand(new Command(){
 			public void execute() {
 				try{
-					FormDef formDef = XformParser.fromXform2FormDefGamb(xml);
+					FormDef formDef = XformParser.fromXform2FormDef(xml);
 					xformXml = formDef.getXformXml();
 					layoutXml = formDef.getLayoutXml();
 
@@ -164,5 +164,15 @@ public class FormRunnerController implements SubmitListener{
 				}
 			}
 		});
+	}
+	@Override
+	public void onSubmit(String xml, boolean valid) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onSubmitFailed(String reason) {
+		// TODO Auto-generated method stub
+		
 	}
 }

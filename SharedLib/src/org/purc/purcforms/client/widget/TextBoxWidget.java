@@ -1,5 +1,7 @@
 package org.purc.purcforms.client.widget;
 
+import org.purc.purcforms.client.util.FormUtil;
+
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.KeyDownEvent;
@@ -15,17 +17,21 @@ import com.google.gwt.user.client.ui.TextBox;
  * @author daniel
  *
  */
-public class TextBoxWidget extends TextBox{
-
+public class TextBoxWidget extends TextBox {
 
 	public TextBoxWidget(){
 		super();
 
-		sinkEvents(Event.getTypeInt(ClickEvent.getType().getName()));
-		sinkEvents(Event.getTypeInt(KeyDownEvent.getType().getName()));
-		sinkEvents(Event.getTypeInt(KeyUpEvent.getType().getName()));
-		sinkEvents(Event.getTypeInt(KeyPressEvent.getType().getName()));
-		sinkEvents(Event.getTypeInt(ChangeEvent.getType().getName()));
+		if (FormUtil.isReadOnlyMode()) {
+			setEnabled(false);
+			setReadOnly(true);
+		} else {
+			sinkEvents(Event.getTypeInt(ClickEvent.getType().getName()));
+			sinkEvents(Event.getTypeInt(KeyDownEvent.getType().getName()));
+			sinkEvents(Event.getTypeInt(KeyUpEvent.getType().getName()));
+			sinkEvents(Event.getTypeInt(KeyPressEvent.getType().getName()));
+			sinkEvents(Event.getTypeInt(ChangeEvent.getType().getName()));
+		}
 	}
 
 
@@ -48,5 +54,15 @@ public class TextBoxWidget extends TextBox{
 		}
 
 		super.onBrowserEvent(event);
+	}
+	
+	@Override
+	public void setEnabled(boolean enabled) {
+		super.setEnabled(enabled);
+		if (enabled) {
+			removeStyleDependentName("disabled");
+		} else {
+			addStyleDependentName("disabled");
+		}
 	}
 }

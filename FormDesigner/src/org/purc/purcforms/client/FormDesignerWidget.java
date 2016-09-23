@@ -4,6 +4,7 @@ import org.purc.purcforms.client.controller.FormDesignerController;
 import org.purc.purcforms.client.controller.IFormSaveListener;
 import org.purc.purcforms.client.model.FormDef;
 import org.purc.purcforms.client.model.Locale;
+import org.purc.purcforms.client.model.ModelConstants;
 import org.purc.purcforms.client.util.FormUtil;
 import org.purc.purcforms.client.view.PreviewView;
 
@@ -168,9 +169,10 @@ public class FormDesignerWidget extends Composite{
 	 * 
 	 * @param formId the form identifier.
 	 */
-	public void loadForm(int formId){
-		if(formId != -1)
+	public void loadForm(String formId){
+		if(!ModelConstants.NO_FORMID.equals(formId)) {
 			controller.loadForm(formId);
+		}
 	}
 
 	/**
@@ -194,21 +196,21 @@ public class FormDesignerWidget extends Composite{
 	 * @param readOnly set to true to prevent changing of form structure and allow 
 	 * 				   changing only text and help text.
 	 */
-	public void loadForm(int formId,String xform, String layout, String javaScript, boolean readOnly){
+	public void loadForm(String formId,String xform, String layout, String javaScript, boolean readOnly){
 		if(leftPanel.formExists(formId))
 			return;
 
 		centerPanel.setXformsSource(xform, false);
 		centerPanel.setLayoutXml(layout, false);
 		centerPanel.setJavaScriptSource(javaScript);
-		controller.openFormDeffered(formId,readOnly);
+		controller.openFormDeferred(formId,readOnly, null);
 	}
 
 	/**
 	 * Saves the currently selected form in the form designer.
 	 */
 	public void saveSelectedForm(){
-		controller.saveForm();
+		controller.saveAsPurcForm();
 	}
 
 	/**
@@ -218,7 +220,7 @@ public class FormDesignerWidget extends Composite{
 	 * @param varName the form binding.
 	 * @param formId the form identifier.
 	 */
-	public void addNewForm(String name, String varName, int formId){
+	public void addNewForm(String name, String varName, String formId){
 		if(leftPanel.formExists(formId))
 			return;
 
@@ -406,7 +408,7 @@ public class FormDesignerWidget extends Composite{
 	 * @param xform the form's xforms xml.
 	 * @param layout the form's layout xml.
 	 */
-	public void setLocaleText(Integer formId, String locale, String xform, String layout){
+	public void setLocaleText(String formId, String locale, String xform, String layout){
 		controller.setLocaleText(formId, locale, xform, layout);
 	}
 
@@ -437,5 +439,13 @@ public class FormDesignerWidget extends Composite{
 
 	public void removeJavaScriptTab(){
 		centerPanel.removeJavaScriptSourceTab();
+	}
+	
+	public void removeDesignSurfaceTab(){
+		centerPanel.removeDesignSurfaceTab();
+	}
+	
+	public void removePreviewTab(){
+		centerPanel.removePreviewTab();
 	}
 }

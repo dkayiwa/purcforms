@@ -38,52 +38,72 @@ public class XformParserUtil {
 	//TODO Add the other xpath operators
 	public static int getOperator(String expression, int action){
 		//We return the operator which is the opposite of the expression
-		if(expression.indexOf(">=") > 0 || expression.indexOf("&gt;=") > 0){
+		if(expression.indexOf(">=") > -1 || expression.indexOf("&gt;=") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_GREATER_EQUAL;
 			return ModelConstants.OPERATOR_LESS;
 		}
-		else if(expression.indexOf('>') > 0 || expression.indexOf("&gt;") > 0){
+		else if(expression.indexOf('>') > -1 || expression.indexOf("&gt;") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_GREATER;
 			return ModelConstants.OPERATOR_LESS_EQUAL;
 		}
-		else if(expression.indexOf("<=") > 0 || expression.indexOf("&lt;=") > 0){
+		else if(expression.indexOf("<=") > -1 || expression.indexOf("&lt;=") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_LESS_EQUAL;
 			return ModelConstants.OPERATOR_GREATER;
 		}
-		else if(expression.indexOf('<') > 0 || expression.indexOf("&lt;") > 0){
+		else if(expression.indexOf('<') > -1 || expression.indexOf("&lt;") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_LESS;
 			return ModelConstants.OPERATOR_GREATER_EQUAL;
 		}
-		else if(expression.indexOf("!=") > 0 || expression.indexOf("!=") > 0){
+		else if(expression.indexOf("!=") > -1 || expression.indexOf("!=") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_NOT_EQUAL;
 			return ModelConstants.OPERATOR_EQUAL;
 		}
-		else if(expression.indexOf('=') > 0){
+		else if(expression.indexOf('=') > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_EQUAL;
 			return ModelConstants.OPERATOR_NOT_EQUAL;
 		}
-		else if(expression.indexOf("not(starts-with") > 0){
+		else if(expression.indexOf("not(starts-with") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_NOT_START_WITH;
 			return ModelConstants.OPERATOR_STARTS_WITH;
 		}
-		else if(expression.indexOf("starts-with") > 0){
+		else if(expression.indexOf("starts-with") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_STARTS_WITH;
 			return ModelConstants.OPERATOR_NOT_START_WITH;
 		}
-		else if(expression.indexOf("not(contains") > 0){
+		else if(expression.indexOf("not(ends-with") > -1){
+			if(XformBuilderUtil.isPositiveAction(action))
+				return ModelConstants.OPERATOR_NOT_END_WITH;
+			return ModelConstants.OPERATOR_ENDS_WITH;
+		}
+		else if(expression.indexOf("ends-with") > -1){
+			if(XformBuilderUtil.isPositiveAction(action))
+				return ModelConstants.OPERATOR_ENDS_WITH;
+			return ModelConstants.OPERATOR_NOT_END_WITH;
+		}
+		else if(expression.indexOf("not(contains") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_NOT_CONTAIN;
 			return ModelConstants.OPERATOR_CONTAINS;
 		}
-		else if(expression.indexOf("contains") > 0){
+		else if(expression.indexOf("contains") > -1){
+			if(XformBuilderUtil.isPositiveAction(action))
+				return ModelConstants.OPERATOR_CONTAINS;
+			return ModelConstants.OPERATOR_NOT_CONTAIN;
+		}
+		else if(expression.indexOf("not(selected(") > -1){
+			if(XformBuilderUtil.isPositiveAction(action))
+				return ModelConstants.OPERATOR_NOT_CONTAIN;
+			return ModelConstants.OPERATOR_CONTAINS;
+		}
+		else if(expression.indexOf("selected(") > -1){
 			if(XformBuilderUtil.isPositiveAction(action))
 				return ModelConstants.OPERATOR_CONTAINS;
 			return ModelConstants.OPERATOR_NOT_CONTAIN;
@@ -124,54 +144,84 @@ public class XformParserUtil {
 		//Using lastindexof because of expressions like:
 		//relevant="/ClinicalData/SubjectData/StudyEventData/FormData/ItemGroupData/ItemData[@ItemOID='I_REVI_IMPROVEMENT']/@Value = '1'"
 		int pos = expression.lastIndexOf("!=");
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 
 		pos = expression.lastIndexOf(">=");
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 
 		pos = expression.lastIndexOf("<=");
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 
 		pos = expression.lastIndexOf('>');
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 
 		pos = expression.lastIndexOf('<');
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 
 		pos = expression.lastIndexOf('=');
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 		
 		//the order of the code below should not be changed as for example 'starts with' can be taken
 		//even when condition is 'not(starts-with'
 		
 		pos = expression.lastIndexOf("not(starts-with");
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 		
 		pos = expression.lastIndexOf("starts-with");
-		if(pos > 0)
+		if(pos > -1)
+			return pos;
+		
+		pos = expression.lastIndexOf("not(ends-with");
+		if(pos > -1)
+			return pos;
+		
+		pos = expression.lastIndexOf("ends-with");
+		if(pos > -1)
 			return pos;
 		
 		pos = expression.lastIndexOf("not(contains");
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
 		
 		pos = expression.lastIndexOf("contains");
-		if(pos > 0)
+		if(pos > -1)
 			return pos;
+		
+		pos = expression.lastIndexOf("not selected(");
+		if(pos > -1)
+			return expression.indexOf(',');
+		
+		pos = expression.lastIndexOf("selected(");
+		if(pos > -1)
+			return expression.indexOf(',');
 
 		return pos;
 	}
 
+	public static void asAttributeCheck(FormDef formDef, Element bindNode, QuestionDef question) {
+		String name = bindNode.getAttribute(XformConstants.ATTRIBUTE_NAME_NODESET);
+		
+		int attPos = name.indexOf("@");
+		if (attPos > -1) {
+			name = name.substring(0, attPos);
+			if(name.startsWith("/"+formDef.getBinding()+"/")) {	name = name.replace("/"+formDef.getBinding()+"/", ""); }
+			question.setAsAttribute(true);
+			question.setAttributeBinding(name);
+		} else {
+			question.setAsAttribute(false);
+			question.setAttributeBinding("");
+		}
+	}
 	
 	/**
-	 * Gets the question variable name without the form prefix (/newform1/)
+	 * Gets the question variable name without the form/group prefix (/newform1/)
 	 * 
 	 * @param bindNode the xforms bind node.
 	 * @param formDef the form to which the question belongs.
@@ -180,6 +230,17 @@ public class XformParserUtil {
 	public static String getQuestionVariableName(Element bindNode, FormDef formDef){
 		String name = bindNode.getAttribute(XformConstants.ATTRIBUTE_NAME_NODESET);
 
+//		if (name != null) {
+//			return name.substring(name.lastIndexOf("/") + 1);
+//		}
+		
+		// -- attribute
+		int attPos = name.indexOf("@");
+		if (attPos > -1) {
+			return name.substring(attPos+1);
+		}
+		
+		// -- node
 		if(name.startsWith("/"+formDef.getBinding()+"/"))
 			name = name.replace("/"+formDef.getBinding()+"/", "");
 		
@@ -246,8 +307,8 @@ public class XformParserUtil {
 	 * 					  definition objects.
 	 * @param questionDef the question definition object to replace that in the constraint map.
 	 */
-	public static void replaceConstraintQtn(HashMap<QuestionDef, String> constraints, QuestionDef questionDef){
-		Iterator<QuestionDef> keys = constraints.keySet().iterator();
+	public static void replaceConstraintQtn(HashMap constraints, QuestionDef questionDef){
+		Iterator keys = constraints.keySet().iterator();
 		while(keys.hasNext()){
 			QuestionDef qtn = (QuestionDef)keys.next();
 			if(qtn.getBinding().equals(questionDef.getBinding())){
@@ -308,10 +369,15 @@ public class XformParserUtil {
 	 * @return the operator constant.
 	 */
 	public static int getConditionsOperator(String expression){
-		if(expression.toLowerCase().indexOf(XformConstants.CONDITIONS_OPERATOR_TEXT_AND) > 0)
+		if(expression.toLowerCase().indexOf(XformConstants.CONDITIONS_OPERATOR_TEXT_AND) > 0 
+				&& expression.toLowerCase().indexOf(XformConstants.CONDITIONS_OPERATOR_TEXT_OR) > 0){
+			return ModelConstants.CONDITIONS_OPERATOR_OR; 
+		}
+		else if(expression.toLowerCase().indexOf(XformConstants.CONDITIONS_OPERATOR_TEXT_AND) > 0)
 			return ModelConstants.CONDITIONS_OPERATOR_AND;
 		else if(expression.toLowerCase().indexOf(XformConstants.CONDITIONS_OPERATOR_TEXT_OR) > 0)
 			return ModelConstants.CONDITIONS_OPERATOR_OR;
+		
 		return ModelConstants.CONDITIONS_OPERATOR_NULL;
 	}
 }

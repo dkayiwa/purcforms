@@ -1,0 +1,120 @@
+/*
+	Copyright (C) 2011-2012 RWO, http://rwo.vlaanderen.be/
+	All rights reserved
+*/
+
+* {
+	margin: 0px;
+	padding: 0px;
+	border: 0px
+}
+
+html {
+	height: 100%
+}
+
+body {
+	font-family: "Trebuchet MS", Arial, Sans-Serif;
+	font-size: 13px;
+	height: 100%;
+	width: 100%;
+	color: #3F5966;
+}
+
+h1, .h1, .H1, .h1_help {
+	font-size: 18px;
+	text-transform: uppercase;
+	color: #E57926;
+	font-weight: normal;
+	margin: 10px 0px;
+}
+
+h2, .h2, .H2, .h2_help {
+	font-size: 15px;
+	text-transform: uppercase;
+	color: #E57926;
+	font-weight: normal;
+	margin-bottom: 10px
+}
+
+h3, .h3, .H3, .h3_help {
+	font-size: 15px;
+	color: #E57926;
+	font-weight: normal;
+	margin-bottom: 8px
+}
+
+p {
+	font-size: 13px;
+	color: #3F5966;
+	margin-bottom: 20px;
+	line-height: 16px
+}
+
+p a {
+	color: #3F5966;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+ul {
+	margin: 10px;
+	list-style-image: url('../img/list.gif');
+}
+
+li {
+	margin: 5px
+}
+
+/* SPECIFIC */
+h2.faq {
+	background: url('../img/icons/orange.png') left -162px no-repeat;
+	padding: 5px 0 5px 35px;
+	height: auto;
+}
+
+h2.links {
+	background: url('../img/icons/orange.png') left -195px no-repeat;
+	padding: 5px 0 5px 35px
+}
+
+button {
+	white-space: nowrap;
+}
+
+table {
+	font-size: 13px;
+}
+
+table button {
+	background: transparent;
+	border: 0px;
+}
+
+table button:hover {
+	cursor: pointer;
+	cursor: hand;
+}
+
+.gwt-TextBox-disabled, .gwt-ListBox-disabled, .gwt-TextArea-disabled, .gwt-RichTextArea-disabled {
+	background-color: #EEEAE1;
+}
+
+.gwt-TextBox-readonly, .gwt-ListBox-readonly, .gwt-TextArea-readonly, .gwt-RichTextArea-readonly {
+	font-weight: bold;
+	border: 1px solid white;
+	background-color: white;
+	color: #3F5966;
+}
+
+.gwt-CheckBox-disabled, .gwt-RadioButton-readonly {
+	/* default is ok. */
+}
+
+.gwt-CheckBox-readonly, .gwt-RadioButton-readonly {
+	color: #3F5966;
+}
+
+.gwt-CheckBox-readonly input:checked + label, .gwt-RadioButton-readonly input:checked + label {
+	font-weight: bold;
+}

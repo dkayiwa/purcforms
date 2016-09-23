@@ -1,5 +1,7 @@
 package org.purc.purcforms.client.widget;
 
+import org.purc.purcforms.client.util.FormUtil;
+
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
@@ -14,7 +16,7 @@ import com.google.gwt.user.client.ui.TextBox;
  * @author daniel
  *
  */
-public class TimeWidget extends TextBox{
+public class TimeWidget extends TextBoxWidget {
 
 	/** The input mask. */
 	private String MASK = "--:-- --";
@@ -26,10 +28,13 @@ public class TimeWidget extends TextBox{
 	/**
 	 * Creates a new instance of the time widget.
 	 */
-	public TimeWidget(){
+	public TimeWidget() {
+		super();
 		setText(MASK);
-		addKeyPressHandler();
-		setMaxLength(8);
+		if (!FormUtil.isReadOnlyMode()) {
+			addKeyPressHandler();
+			setMaxLength(8);
+		}
 	}
 
 

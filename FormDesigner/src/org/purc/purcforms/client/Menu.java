@@ -68,37 +68,48 @@ public class Menu extends Composite {
 		fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.open(),LocaleText.get("print")),true, new Command(){
 			public void execute() {controller.printForm();}});
 
+		
+		
+//		fileMenu.addSeparator();
+//		fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.open(),LocaleText.get("openLayout")),true, new Command(){
+//			public void execute() {controller.openFormLayout();}});
+//
+//		fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveLayout")),true, new Command(){
+//			public void execute() {controller.saveFormLayout();}});
+		
+		
+		
 		fileMenu.addSeparator();
 
-
 		fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("save")),true, new Command(){
-			public void execute() {controller.saveForm();}});
+			public void execute() {controller.saveAsPurcForm();}});
 
-		if(Context.isOfflineMode()){
-			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveAs")),true, new Command(){
-				public void execute() {controller.saveFormAs();}});
+//		fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveAs")),true, new Command(){
+//			public void execute() {controller.saveFormAs();}});
 
-			fileMenu.addSeparator();
+//		if(Context.isOfflineMode()){
+
+			/*fileMenu.addSeparator();
 			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.open(),LocaleText.get("openLayout")),true, new Command(){
 				public void execute() {controller.openFormLayout();}});
 
 			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveLayout")),true, new Command(){
-				public void execute() {controller.saveFormLayout();}});
+				public void execute() {controller.saveFormLayout();}});*/
 
-			fileMenu.addSeparator();
-			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.open(),LocaleText.get("openLanguageText")),true, new Command(){
-				public void execute() {controller.openLanguageText();}});
+//			fileMenu.addSeparator();
+//			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.open(),LocaleText.get("openLanguageText")),true, new Command(){
+//				public void execute() {controller.openLanguageText();}});
+//
+//			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveLanguageText")),true, new Command(){
+//				public void execute() {controller.saveLanguageText();}});
+//
+//			fileMenu.addSeparator();
+//			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveAsXhtml")),true, new Command(){
+//				public void execute() {controller.saveAsXhtml();}});
+//		}
 
-			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveLanguageText")),true, new Command(){
-				public void execute() {controller.saveLanguageText();}});
-
-			fileMenu.addSeparator();
-			fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveAsXhtml")),true, new Command(){
-				public void execute() {controller.saveAsXhtml();}});
-		}
-
-		fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveAsPurcForm")),true, new Command(){
-			public void execute() {controller.saveAsPurcForm();}});
+//		fileMenu.addItem(FormDesignerUtil.createHeaderHTML(images.save(),LocaleText.get("saveAsPurcForm")),true, new Command(){
+//			public void execute() {controller.saveAsPurcForm();}});
 
 
 		fileMenu.addSeparator();

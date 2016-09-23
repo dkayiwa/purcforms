@@ -1,6 +1,7 @@
 package org.purc.purcforms.client;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.purc.purcforms.client.LeftPanel.Images;
@@ -15,19 +16,22 @@ import org.purc.purcforms.client.controller.WidgetPropertyChangeListener;
 import org.purc.purcforms.client.controller.WidgetSelectionListener;
 import org.purc.purcforms.client.locale.LocaleText;
 import org.purc.purcforms.client.model.FormDef;
-import org.purc.purcforms.client.util.FormDesignerUtil;
+import org.purc.purcforms.client.model.Locale;
 import org.purc.purcforms.client.util.FormUtil;
 import org.purc.purcforms.client.util.LanguageUtil;
 import org.purc.purcforms.client.view.DesignSurfaceView;
 import org.purc.purcforms.client.view.PreviewView;
 import org.purc.purcforms.client.view.PropertiesView;
+import org.purc.purcforms.client.widget.DesignWidgetWrapper;
 import org.purc.purcforms.client.widget.RuntimeWidgetWrapper;
+import org.purc.purcforms.client.xforms.XformConstants;
+import org.purc.purcforms.client.xforms.XmlUtil;
 
+import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.EventPreview;
 import com.google.gwt.user.client.Window;
@@ -35,8 +39,10 @@ import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.DecoratedTabPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.TextArea;
+import com.google.gwt.user.client.ui.TreeItem;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Element;
+import com.google.gwt.xml.client.NodeList;
 
 
 /**
@@ -45,7 +51,7 @@ import com.google.gwt.xml.client.Element;
  * @author daniel
  *
  */
-public class CenterPanel extends Composite implements SelectionHandler<Integer>, IFormSelectionListener, SubmitListener, LayoutChangeListener, ICenterPanel{
+public class CenterPanel extends Composite implements SelectionHandler<Integer>, IFormSelectionListener, SubmitListener, LayoutChangeListener, ICenterPanel {
 
 	/** Index for the properties tab. */
 	private int SELECTED_INDEX_PROPERTIES = 0;
@@ -55,7 +61,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 
 	/** Index for the design surface tab. */
 	private int SELECTED_INDEX_DESIGN_SURFACE = 2;
-	
+
 	/** Index for the javascript source tab. */
 	private int SELECTED_INDEX_JAVASCRIPT_SOURCE = 3;
 
@@ -76,6 +82,10 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	private boolean showLayoutXml = true;
 	private boolean showLanguageXml = true;
 	private boolean showModelXml = true;
+	private boolean showDesignSurface = true;
+	private boolean showPreview = true;
+	
+	private boolean refreshWidgets = true;
 
 
 	/**
@@ -97,7 +107,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	 * View onto which user drags and drops ui controls in a WUSIWUG manner.
 	 */
 	private DesignSurfaceView designSurfaceView;
-	
+
 	/** The text area which contains javascript source. */
 	private TextArea txtJavaScriptSource = new TextArea();
 
@@ -156,6 +166,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 		tabs.addSelectionHandler(this);
 
 		Context.setCurrentMode(Context.MODE_QUESTION_PROPERTIES);
+		Context.setCenterPanel(this);
 
 		previewEvents();
 	}
@@ -179,6 +190,12 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 					else if(mode == Context.MODE_QUESTION_PROPERTIES || mode == Context.MODE_XFORMS_SOURCE)
 						return formDesignerListener.handleKeyBoardEvent(event);
 				}
+				
+				/*int keyCode = event.getKeyCode();
+				if(keyCode == KeyCodes.KEY_UP || keyCode == KeyCodes.KEY_DOWN){
+					if(Window.getScrollLeft() != 0 || Window.getScrollTop() != 0)
+						Window.scrollTo(0, 0);
+				}*/
 
 				return true;
 			}
@@ -198,23 +215,25 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	/**
 	 * @see com.google.gwt.event.logical.shared.SelectionHandler#onSelection(SelectionEvent)
 	 */
+	@Override
 	public void onSelection(SelectionEvent<Integer> event){
 		selectedTabIndex = event.getSelectedItem();
 
 		if(selectedTabIndex == SELECTED_INDEX_DESIGN_SURFACE)
 			Context.setCurrentMode(Context.MODE_DESIGN);
 		else if(selectedTabIndex == SELECTED_INDEX_PREVIEW){
-			if(formDef != null && formDef.getQuestionCount() > 0 && !designSurfaceView.hasWidgets()){
+			if(formDef != null && formDef.getQuestionCountFull() > 0 && !designSurfaceView.hasWidgets()){
 				tabs.selectTab(SELECTED_INDEX_DESIGN_SURFACE);
-				
-				DeferredCommand.addCommand(new Command(){
+
+				Scheduler.get().scheduleDeferred(new Command(){
+					@Override
 					public void execute() {
 						tabs.selectTab(SELECTED_INDEX_PREVIEW);
 					}
 				});
 				return;
 			}
-			
+
 			Context.setCurrentMode(Context.MODE_PREVIEW);
 		}
 		else if(selectedTabIndex == SELECTED_INDEX_PROPERTIES)
@@ -233,11 +252,12 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 			}
 		}
 		else if(selectedTabIndex == SELECTED_INDEX_DESIGN_SURFACE){
-			if(!designSurfaceView.hasWidgets())
+			if(!designSurfaceView.hasWidgets() && refreshWidgets)
 				designSurfaceView.refresh();
 		}
 
 
+		refreshWidgets = true;
 		//else if(selectedTabIndex == SELECTED_INDEX_LAYOUT_XML)
 		//	txtLayoutXml.setText(designSurfaceView.getLayoutXml());
 	}
@@ -246,11 +266,12 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 		FormUtil.dlg.setText(LocaleText.get("loadingPreview"));
 		FormUtil.dlg.center();
 
-		DeferredCommand.addCommand(new Command(){
+		Scheduler.get().scheduleDeferred(new Command(){
+			@Override
 			public void execute() {
 				try{
 					commitChanges();
-					
+
 					List<RuntimeWidgetWrapper> externalSourceWidgets = new ArrayList<RuntimeWidgetWrapper>();
 					if(Context.isOfflineMode())
 						;//externalSourceWidgets = null;
@@ -291,7 +312,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 		tabs.add(txtXformsSource, LocaleText.get("xformsSource"));
 		FormUtil.maximizeWidget(txtXformsSource);
 	}
-	
+
 	/**
 	 * Sets up the layout xml tab.
 	 */
@@ -361,8 +382,9 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	/**
 	 * @see org.purc.purcforms.client.controller.IFormSelectionListener#onFormItemSelected(java.lang.Object)
 	 */
-	public void onFormItemSelected(Object formItem) {
-		propertiesView.onFormItemSelected(formItem);
+	@Override
+	public void onFormItemSelected(Object formItem, TreeItem item) {
+		propertiesView.onFormItemSelected(formItem, item);
 
 		if(selectedTabIndex == SELECTED_INDEX_PROPERTIES)
 			propertiesView.setFocus();
@@ -470,12 +492,13 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	public String getLayoutXml(){
 		return txtLayoutXml.getText();
 	}
-	
+
 	/**
 	 * Gets the javascript source.
 	 * 
 	 * @return the layout xml.
 	 */
+	@Override
 	public String getJavaScriptSource(){
 		return txtJavaScriptSource.getText();
 	}
@@ -509,7 +532,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 		if(selectTabs && showLayoutXml)
 			tabs.selectTab(SELECTED_INDEX_LAYOUT_XML);
 	}
-	
+
 	/** 
 	 * Sets the javascript source.
 	 * 
@@ -554,16 +577,48 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 
 		Element node = null;
 		if(formDef != null){
-			node = formDef.getLanguageNode();
+			HashMap<String, String> changedXpaths = new HashMap<String, String>();
+			node = formDef.getLanguageNode(changedXpaths);
 			if(node != null)
 				rootNode.appendChild(doc.importNode(node, true));
+
+			//TODO May also need to work on the layout locale text changes when binding changes xpath expression.
+			if(!Context.inLocalizationMode() && changedXpaths.size() > 0){
+
+				//Update all locale xpath expressions that have changed.
+				HashMap<String,String> localeMap = Context.getLanguageText().get(formDef.getId());
+				
+				if(localeMap != null){
+					
+					for(Locale locale : Context.getLocales()){
+						if(locale.getKey().equals(Context.getLocale().getKey()))
+							continue;
+
+						String xml = localeMap.get(locale.getKey());
+						if(xml == null)
+							continue;
+
+						Document localeDoc = XmlUtil.getDocument(xml);
+						NodeList nodes = ((Element)localeDoc.getElementsByTagName("xform").item(0)).getElementsByTagName("text");
+						for(int index = 0; index < nodes.getLength(); index++){
+							node  = (Element)nodes.item(index);
+							String xpath = node.getAttribute(XformConstants.ATTRIBUTE_NAME_XPATH);
+							if(changedXpaths.containsKey(xpath))
+								node.setAttribute(XformConstants.ATTRIBUTE_NAME_XPATH, changedXpaths.get(xpath));
+						}
+
+						//TODO Why don't we store locale text as xml documents in this map for performance??
+						localeMap.put(locale.getKey(), XmlUtil.fromDoc2String(localeDoc));
+					}
+				}
+			}
 		}
 
 		node = designSurfaceView.getLanguageNode();
 		if(node != null)
 			rootNode.appendChild(doc.importNode(node, true));
 
-		txtLanguageXml.setText(FormDesignerUtil.formatXml(doc.toString()));
+		txtLanguageXml.setText(FormUtil.formatXml(doc.toString()));
 
 		if(formDef != null)
 			formDef.setLanguageXml(txtLanguageXml.getText());
@@ -647,7 +702,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 
 	public void saveFormLayout(){
 		txtLayoutXml.setText(designSurfaceView.getLayoutXml());
-		
+
 		if(showLayoutXml)
 			tabs.selectTab(SELECTED_INDEX_LAYOUT_XML);
 
@@ -661,10 +716,10 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 		if(selectTab)
 			selectLanguageTab();
 
-		if(formDef != null)
-			formDef.setLanguageXml(txtLanguageXml.getText());
+//		if(formDef != null)
+//			formDef.setLanguageXml(txtLanguageXml.getText());
 	}
-	
+
 	public void saveJavaScriptSource(){
 		if(formDef != null)
 			formDef.setJavaScriptSource(txtJavaScriptSource.getText());
@@ -675,17 +730,18 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	 */
 	public void format(){
 		if(selectedTabIndex == SELECTED_INDEX_XFORMS_SOURCE)
-			txtXformsSource.setText(FormDesignerUtil.formatXml(txtXformsSource.getText()));
+			txtXformsSource.setText(FormUtil.formatXml(txtXformsSource.getText()));
 		else if(selectedTabIndex == SELECTED_INDEX_LAYOUT_XML)
-			txtLayoutXml.setText(FormDesignerUtil.formatXml(txtLayoutXml.getText()));
+			txtLayoutXml.setText(FormUtil.formatXml(txtLayoutXml.getText()));
 		else if(selectedTabIndex == SELECTED_INDEX_MODEL_XML)
-			txtModelXml.setText(FormDesignerUtil.formatXml(txtModelXml.getText()));
+			txtModelXml.setText(FormUtil.formatXml(txtModelXml.getText()));
 		else if(selectedTabIndex == SELECTED_INDEX_DESIGN_SURFACE)
 			designSurfaceView.format();
 		else if(selectedTabIndex == SELECTED_INDEX_LANGUAGE_XML)
-			txtLanguageXml.setText(FormDesignerUtil.formatXml(txtLanguageXml.getText()));
+			txtLanguageXml.setText(FormUtil.formatXml(txtLanguageXml.getText()));
 	}
 
+	@Override
 	public void commitChanges(){
 		propertiesView.commitChanges();
 	}
@@ -705,6 +761,19 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	public void deleteSelectedItem() {
 		if(selectedTabIndex == SELECTED_INDEX_DESIGN_SURFACE)
 			designSurfaceView.deleteSelectedItem();	
+	}
+	
+	public DesignWidgetWrapper addToDesignSurface(Object item) {
+		if(selectedTabIndex == SELECTED_INDEX_DESIGN_SURFACE)
+			return designSurfaceView.addToDesignSurface(item);
+		else {
+			tabs.selectTab(SELECTED_INDEX_DESIGN_SURFACE);
+			
+			if(designSurfaceView.hasWidgets())
+				return designSurfaceView.addToDesignSurface(item);
+		}
+		
+		return null;
 	}
 
 	/**
@@ -734,9 +803,10 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	/**
 	 * @see org.purc.purcforms.client.controller.SubmitListener#onSubmit(String)()
 	 */
-	public void onSubmit(String xml) {
+	@Override
+	public void onSubmit(String xml, boolean valid) {
 		this.txtModelXml.setText(xml);
-		
+
 		if(showModelXml)
 			tabs.selectTab(SELECTED_INDEX_MODEL_XML);
 		else
@@ -744,10 +814,23 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	}
 
 	/**
+	 * Retrieve the data from the Model-tab.
+	 * @return
+	 */
+	public String getModelXml() {
+		return txtModelXml.getText();
+	}
+	
+	/**
 	 * @see org.purc.purcforms.client.controller.SubmitListener#onCancel()()
 	 */
+	@Override
 	public void onCancel(){
-
+	}
+	
+	@Override
+	public void onSubmitFailed(String reason) {
+		
 	}
 
 	/**
@@ -812,8 +895,10 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	public void refresh(){
 		if(selectedTabIndex == SELECTED_INDEX_PREVIEW)
 			previewView.refresh(); //loadForm(formDef,designSurfaceView.getLayoutXml(),null);
-		else if(selectedTabIndex == SELECTED_INDEX_DESIGN_SURFACE)
+		else if(selectedTabIndex == SELECTED_INDEX_DESIGN_SURFACE) {
+			commitChanges();
 			designSurfaceView.refresh();
+		}
 	}
 
 	/**
@@ -845,6 +930,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	 * 
 	 * @return the form definition object.
 	 */
+	@Override
 	public FormDef getFormDef(){
 		return formDef;
 	}
@@ -856,7 +942,6 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	 * @param offset the offset pixels.
 	 */
 	public void setEmbeddedHeightOffset(int offset){
-		designSurfaceView.setEmbeddedHeightOffset(offset);
 		previewView.setEmbeddedHeightOffset(offset);
 	}
 
@@ -881,6 +966,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 	/**
 	 * @see org.purc.purcforms.client.controller.LayoutChangeListener#onLayoutChanged(String)
 	 */
+	@Override
 	public void onLayoutChanged(String xml){
 		txtLayoutXml.setText(xml);
 		if(formDef != null)
@@ -921,10 +1007,10 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 		//if(tabs.getTabBar().getTabCount() == 7){
 		if(showLanguageXml){
 			tabs.remove(SELECTED_INDEX_LANGUAGE_XML);
-			
+
 			--SELECTED_INDEX_PREVIEW;
 			--SELECTED_INDEX_MODEL_XML;
-			
+
 			showLanguageXml = false;
 		}
 		//}
@@ -941,7 +1027,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 			--SELECTED_INDEX_LANGUAGE_XML;
 			--SELECTED_INDEX_PREVIEW;
 			--SELECTED_INDEX_MODEL_XML;
-			
+
 			showXformsSource = false;
 		}
 	}
@@ -954,7 +1040,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 			--SELECTED_INDEX_LANGUAGE_XML;
 			--SELECTED_INDEX_PREVIEW;
 			--SELECTED_INDEX_MODEL_XML;
-			
+
 			showJavaScriptSource = false;
 		}
 	}
@@ -967,7 +1053,7 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 			--SELECTED_INDEX_LANGUAGE_XML;
 			--SELECTED_INDEX_PREVIEW;
 			--SELECTED_INDEX_MODEL_XML;
-			
+
 			showLayoutXml = false;
 		}
 	}
@@ -980,8 +1066,58 @@ public class CenterPanel extends Composite implements SelectionHandler<Integer>,
 		}
 	}
 	
+	public void removeDesignSurfaceTab(){
+		if(showDesignSurface){
+			tabs.remove(SELECTED_INDEX_DESIGN_SURFACE);
+
+			--SELECTED_INDEX_LANGUAGE_XML;
+			--SELECTED_INDEX_PREVIEW;
+			--SELECTED_INDEX_MODEL_XML;
+			--SELECTED_INDEX_LAYOUT_XML;
+			--SELECTED_INDEX_JAVASCRIPT_SOURCE;
+
+			showDesignSurface = false;
+		}
+	}
 	
+	public void removePreviewTab(){
+		if(showPreview){
+			tabs.remove(SELECTED_INDEX_PREVIEW);
+
+			--SELECTED_INDEX_MODEL_XML;
+
+			showPreview = false;
+		}
+	}
+
 	public WidgetPropertyChangeListener getWidgetPropertyChangeListener(){
 		return designSurfaceView;
 	}
+	
+	public void selectDesignSurface(boolean refreshWidgets){
+		this.refreshWidgets =  refreshWidgets;
+		
+		if(showDesignSurface){
+			if(tabs.getTabBar().getSelectedTab() == SELECTED_INDEX_DESIGN_SURFACE)
+				return;
+			
+			tabs.selectTab(SELECTED_INDEX_DESIGN_SURFACE);
+		}
+	}
+	
+	public void selectPropertiesTab(){
+		if(tabs.getTabBar().getSelectedTab() == SELECTED_INDEX_PROPERTIES)
+			return;
+		
+		tabs.selectTab(SELECTED_INDEX_PROPERTIES);
+	}
+	
+	public PreviewView getPreviewView() {
+		return previewView;
+	}
+
+	public DesignSurfaceView getDesignSurfaceView() {
+		return designSurfaceView;
+	}
+
 }

@@ -123,24 +123,27 @@ public class RuntimeGroupView extends Composite implements OpenFileDialogEventLi
 		}
 	}
 
+	@Override
 	public void onRequiredChanged(QuestionDef sender,boolean required){
-
 	}
 
+	@Override
 	public void onLockedChanged(QuestionDef sender,boolean locked){
-
 	}
 
+	@Override
 	public void onBindingChanged(QuestionDef sender,String newValue){
-
 	}
 
+	@Override
 	public void onDataTypeChanged(QuestionDef sender,int dataType){
-
 	}
 
+	@Override
 	public void onOptionsChanged(QuestionDef sender,List<OptionDef> optionList){
-
 	}
 
+	@Override
+	public void onAttributeStateChanged(QuestionDef sender) { // only changes designtime
+	}
 }

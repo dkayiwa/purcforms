@@ -19,6 +19,8 @@ import com.google.gwt.xml.client.XMLParser;
  */
 public class XformUtil {
 
+	private static final String XMLNS = "xmlns";
+	
 	/**
 	 * All methods in this class are static and hence we expect no external
 	 * Instantiation of this class.
@@ -26,8 +28,8 @@ public class XformUtil {
 	private XformUtil(){
 
 	}
-	
-	
+
+
 	/**
 	 * Creates a node from an xml fragment.
 	 * 
@@ -43,8 +45,8 @@ public class XformUtil {
 			node.removeAttribute(XformConstants.ATTRIBUTE_NAME_XMLNS);
 		return node;
 	}
-	
-	
+
+
 	/**
 	 * Renames a node.
 	 * 
@@ -60,8 +62,8 @@ public class XformUtil {
 		parent.replaceChild(child, node);
 		return child;
 	}
-	
-	
+
+
 	/**
 	 * Gets an xforms instance node with a given id.
 	 * 
@@ -73,20 +75,20 @@ public class XformUtil {
 		NodeList nodes = modelNode.getElementsByTagName(XformConstants.NODE_NAME_INSTANCE); //TODO What if we have a different prefix from xf?
 		if(nodes.getLength() == 0)
 			nodes = modelNode.getElementsByTagName(XformConstants.NODE_NAME_INSTANCE_MINUS_PREFIX);
-		
+
 		if(nodes == null)
 			return null;
-		
+
 		for(int index = 0; index < nodes.getLength(); index++){
 			Element node = (Element)nodes.item(index);
 			if(instanceId.equalsIgnoreCase(node.getAttribute(XformConstants.ATTRIBUTE_NAME_ID)))
 				return node;
 		}
-		
+
 		return null;
 	}
-	
-	
+
+
 	/**
 	 * Gets the model node of an xforms document with a given root node.
 	 * 
@@ -112,8 +114,8 @@ public class XformUtil {
 		}
 		return null;
 	}
-	
-	
+
+
 	/**
 	 * Copies the xforms model instance from one document to another.
 	 * 
@@ -133,8 +135,8 @@ public class XformUtil {
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * Gets the node that has the text value which is the answer, in a given
 	 * binding or variable name (e.g obs/weight/value)
@@ -163,7 +165,7 @@ public class XformUtil {
 		node = XmlUtil.getNode(node,name);
 		return node;
 	}
-	
+
 
 	/**
 	 * Changes our namespace prefix to the one used in the original document.
@@ -176,21 +178,40 @@ public class XformUtil {
 		//We use xf prefix. So if the loaded xform
 		//did not use the same prefix, then replace our prefix with that
 		//which came with the xform.
-		String prefix = doc.getDocumentElement().getPrefix();
-			
-		if(!"xf".equals(prefix)){
-			if(prefix == null || prefix.trim().length() == 0)
-				prefix = "";
-			else
-				prefix += ":";
-			
-			xml = xml.replace("xf:", prefix);
+
+		//The line below is commented out because of the bug it brings for say an xhtml document with a root node name like "h:html"
+		//String prefix = doc.getDocumentElement().getPrefix();
+
+		//We use the prefix of the model node to determine the xforms prefix used in the document.
+		Element modelNode = XmlUtil.getNode(doc.getDocumentElement(), XformConstants.NODE_NAME_MODEL_MINUS_PREFIX);
+		if(modelNode != null){
+
+			String prefix = modelNode.getPrefix();
+
+			//Ensure that the namespace prefix is declared
+			if(prefix != null && prefix.trim().length() > 0){
+				String xmlns = "xmlns:" + prefix;
+				String val = doc.getDocumentElement().getAttribute(xmlns);
+				if(val == null || val.trim().length() == 0){
+					doc.getDocumentElement().setAttribute(xmlns, XformConstants.NAMESPACE_XFORMS);
+					xml = XmlUtil.fromDoc2String(doc);
+				}
+			}
+
+			if(!"xf".equals(prefix)){
+				if(prefix == null || prefix.trim().length() == 0)
+					prefix = "";
+				else
+					prefix += ":";
+
+				xml = xml.replace("xf:", prefix);
+			}
 		}
-		
+
 		return xml;
 	}
-	
-	
+
+
 	/**
 	 * Gets the instance node of an xforms document.
 	 * 
@@ -201,7 +222,7 @@ public class XformUtil {
 		return getInstanceNode(doc.getDocumentElement());
 	}
 
-	
+
 	/**
 	 * Gets the instance data node of an xforms document.
 	 * 
@@ -212,9 +233,11 @@ public class XformUtil {
 		return getInstanceDataNode(getInstanceNode(doc));
 	}
 
-	
+
 	/**
 	 * Gets the instance data node of an xforms document as a new document.
+	 * Caveat - this is DBA specific!!
+	 * <p>Only the default namespace is added (if any).
 	 * 
 	 * @param doc the xforms document.
 	 * @return the new document having the instance data node as its root node.
@@ -226,13 +249,25 @@ public class XformUtil {
 		dataDoc.appendChild(data.cloneNode(true));
 
 		Element root = dataDoc.getDocumentElement();
+		NamedNodeMap attrs = root.getAttributes();
+		for (int i = 0; i < attrs.getLength(); i++) {
+			root.removeAttribute(attrs.item(i).getNodeName());
+		}
+		try{
+			root.removeAttribute("id");
+		}
+		catch(Exception ex){
+			ex.printStackTrace();
+		}
+		
 		NamedNodeMap attributes = doc.getDocumentElement().getAttributes();
 		for(int index = 0; index < attributes.getLength(); index++){
 			Node attribute = attributes.item(index);
 			String name = attribute.getNodeName();
-			if(name.startsWith("xmlns:")){
+			if(name.equals(XMLNS)){
 				try{
-					root.setAttribute(name, attribute.getNodeValue());
+					root.removeAttribute(XMLNS);
+					root.setAttribute(XMLNS, attribute.getNodeValue());
 				}
 				catch(Exception ex){
 					ex.printStackTrace();
@@ -243,7 +278,6 @@ public class XformUtil {
 		return dataDoc;
 	}
 
-	
 	/**
 	 * Gets the instance node of an xforms document with a given root node.
 	 * 
@@ -270,7 +304,7 @@ public class XformUtil {
 		return null;
 	}
 
-	
+
 	/**
 	 * Gets the instance data node of an xforms document with a given root node.
 	 * 
@@ -278,6 +312,9 @@ public class XformUtil {
 	 * @return the instance data node.
 	 */
 	public static Element getInstanceDataNode(Element element){
+		if(element == null)
+			return null;
+		
 		int numOfEntries = element.getChildNodes().getLength();
 		for (int i = 0; i < numOfEntries; i++) {
 			if (element.getChildNodes().item(i).getNodeType() == Node.ELEMENT_NODE) 
@@ -285,5 +322,28 @@ public class XformUtil {
 		}
 
 		return null;
+	}
+	
+	public static void copyInstanceId(Document srcDoc, Element dstNode){
+		if(srcDoc == null)
+			return;
+		
+		copyIdAttribute(getInstanceNode(srcDoc), dstNode);
+	}
+	
+	public static void copyModelId(Document srcDoc, Element dstNode){
+		if(srcDoc == null || dstNode == null)
+			return;
+		
+		copyIdAttribute(getModelNode(srcDoc.getDocumentElement()), dstNode);
+	}
+	
+	public static void copyIdAttribute(Element srcNode, Element dstNode){
+		if(srcNode == null || srcNode == null)
+			return;
+		
+		String id = srcNode.getAttribute(XformConstants.ATTRIBUTE_NAME_ID);
+		if(id != null && id.trim().length() > 0)
+			dstNode.setAttribute(XformConstants.ATTRIBUTE_NAME_ID, id);
 	}
 }

@@ -8,17 +8,17 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.DeferredCommand;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.FormPanel;
+import com.google.gwt.user.client.ui.FormPanel.SubmitCompleteHandler;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HasVerticalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.FormPanel.SubmitCompleteHandler;
 
 
 /**
@@ -28,6 +28,8 @@ import com.google.gwt.user.client.ui.FormPanel.SubmitCompleteHandler;
  */
 public class SaveFileDialog extends DialogBox{
 
+	private static boolean warnOnClose = true;
+	
 	private FormPanel form = new FormPanel();
 	private String actionUrl;
 	private TextBox txtName;
@@ -110,7 +112,14 @@ public class SaveFileDialog extends DialogBox{
 			public void onSubmitComplete(FormPanel.SubmitCompleteEvent event){
 				hide();
 				FormUtil.dlg.hide();
-				Window.Location.replace(form.getAction());
+				warnOnClose = false;
+				 
+				DialogBox dialog = new DialogBox(true, true);
+				dialog.setHTML("Opslaan Formulier");
+				dialog.setGlassEnabled(true);
+				
+				dialog.add(new Label("Uw Formulier werd succesvol opgeslagen."));
+				dialog.center();
 			}
 		});
 
@@ -133,5 +142,13 @@ public class SaveFileDialog extends DialogBox{
 				txtName.setFocus(true);
 			}
 		});
+	}
+	
+	public static boolean isWarnOnClose() {
+		return warnOnClose;
+	}
+
+	public static void setWarnOnClose(boolean warnOnClose) {
+		SaveFileDialog.warnOnClose = warnOnClose;
 	}
 }

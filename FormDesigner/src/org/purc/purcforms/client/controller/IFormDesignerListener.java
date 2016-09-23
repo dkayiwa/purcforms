@@ -1,6 +1,7 @@
 package org.purc.purcforms.client.controller;
 
 import org.purc.purcforms.client.model.Locale;
+import org.purc.purcforms.client.widget.DesignWidgetWrapper;
 
 import com.google.gwt.user.client.Event;
 
@@ -160,4 +161,9 @@ public interface IFormDesignerListener extends IFormActionListener{
 	 * @return true if you want the event to propagate to other event handlers, else false.
 	 */
 	public boolean handleKeyBoardEvent(Event event);
+	
+	public void undo();
+	public void redo();
+	
+	public DesignWidgetWrapper addToDesignSurface(Object item);
 }

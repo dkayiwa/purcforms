@@ -1,0 +1,55 @@
+/** speciaal voor Purcforms **/
+
+
+[ExternalSource=title] {
+	color: orange;
+	font-weight: bold;
+}
+
+
+
+
+
+
+/*  ++++++++++++++++++++++++++++ */
+
+.wrapper {
+	text-align: left;
+	margin: 0px auto;  /* Center for normal browsers */
+	width: expression(document.body.clientWidth > 1100? "1100px": "auto");
+	max-width: 1100px;
+}
+.page_title_block {
+	padding: 15px 15px 0px 15px;
+	border-bottom: solid 1px #EEEAE1;	
+}
+
+.gwt-DialogBox .dialogMiddleCenter  {
+	padding: 0px;
+}
+ 
+.gwt-Label {
+	padding-top: 4px;
+	margin-right: 3px;
+}
+
+.gwt-CheckBox, .gwt-RadioButton, .gwt-DateBox, .gwt-Hyperlink {
+	display: block;
+	margin-top: 4px;
+	margin-right: 5px;
+}
+
+/* -- Needed because gwt style  --*/
+.gwt-DateBox {
+	border: 1px solid #D8D5CD;
+	height: 22px;
+	width: 160px;
+}
+
+input,select,textarea {
+	margin: 0 5px 0 px;
+	font-size: 100%;
+	vertical-align: top;
+	margin-right: 0;
+	margin-left: 5px;
+}

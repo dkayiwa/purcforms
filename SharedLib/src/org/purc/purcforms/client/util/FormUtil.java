@@ -1,18 +1,22 @@
 package org.purc.purcforms.client.util;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.purc.purcforms.client.PurcConstants;
 import org.purc.purcforms.client.locale.LocaleText;
 import org.purc.purcforms.client.model.OptionDef;
 import org.purc.purcforms.client.view.ErrorDialog;
 import org.purc.purcforms.client.view.ProgressDialog;
+import org.purc.purcforms.client.widget.RuntimeWidgetWrapper;
 import org.purc.purcforms.client.xforms.XformConstants;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.dom.client.Node;
 import com.google.gwt.dom.client.NodeList;
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -20,10 +24,15 @@ import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyPressEvent;
 import com.google.gwt.event.dom.client.KeyPressHandler;
+import com.google.gwt.http.client.Header;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.i18n.client.LocaleInfo;
+import com.google.gwt.i18n.client.NumberFormat;
 import com.google.gwt.resources.client.ImageResource;
+import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.AbstractImagePrototype;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
@@ -43,6 +52,50 @@ import com.google.gwt.xml.client.Element;
  */
 public class FormUtil {
 
+	public static final String SAVE_DECIMAL_SEPARATOR = ".";
+	
+	private static final String NUMBER_FORMAT_PATTERN = "#,##0";
+	private static final String DECIMAL_FORMAT_PATTERN = "#,##0.0#######";
+	private static final int FRACTION_LIMIT = 8;
+	
+	/** Parameter for the form id. e.g formId, surveyId, questionaireId, etc. */
+	private static final String PARAM_NAME_FORM_ID_NAME = "formIdName";
+
+	/** 
+	 * Parameter for the format in which two save the form. 
+	 * For now we only have the default value "purcforms" or "javarosa"
+	 */
+	private static final String PARAM_NAME_SAVE_FORMAT = "saveFormat";
+
+	/** 
+	 * Flag to tell whether to combine the xform with widget layout and JavaScript 
+	 * as one text document, when saving the form. 
+	 * Possible values are "1" or "true" for YES and "0" or "false" for NO
+	 */
+	private static final String PARAM_NAME_COMBINE_FORM_ON_SAVE = "combineFormOnSave";
+
+	/**
+	 * Flag to tell whether we allow automatic rebuilding of form bindings.
+	 * e.g setting the bindings to q1, q2, q3, etc according to the order of the questions.
+	 * Possible values are "1" or "true" for YES and "0" or "false" for NO
+	 */
+	private static final String PARAM_NAME_REBUILD_BINDINGS = "rebuildBindings";
+
+	/**
+	 * Flag to tell whether the form structure can change or not.
+	 * When the form structure cannot change, no new questions can be added and the existing
+	 * ones cannot be deleted. But question properties like, text, visible, skip logic, etc can be changed.
+	 * Possible values are "1" or "true" for YES and "0" or "false" for NO
+	 */
+	private static final String PARAM_NAME_READONLY = "readOnly";
+
+	/**
+	 * Flag to tell whether the form can be saved when its data is not valid.
+	 * Possible values are "1" or "true" for YES and "0" or "false" for NO
+	 */
+	private static final String PARAM_NAME_ALLOWINVALIDFORMSAVE = "allowInvalidFormSave";
+
+
 	/** The date time format used in the xforms model xml. */
 	private static DateTimeFormat dateTimeSubmitFormat;
 
@@ -60,12 +113,17 @@ public class FormUtil {
 
 	/** The time format used for display purposes. */
 	private static DateTimeFormat timeDisplayFormat;
+	
+	/** The date and time format used when passing string dates to JavaScript. */
+	private static DateTimeFormat javaScriptDateFormat;
 
 	private static String formDefDownloadUrlSuffix;
 	private static String formDefUploadUrlSuffix;
 	private static String entityFormDefDownloadUrlSuffix;
 	private static String formDataUploadUrlSuffix;
+	private static String formDataDownloadUrlSuffix;
 	private static String afterSubmitUrlSuffix;
+	private static String afterCancelUrlSuffix;
 	private static String formDefRefreshUrlSuffix;
 	private static String externalSourceUrlSuffix;
 	private static String multimediaUrlSuffix;
@@ -73,9 +131,24 @@ public class FormUtil {
 	private static String fileSaveUrlSuffix;
 	private static String gpsTypeName;
 	private static String saveFormat;
+	private static String undoRedoBufferSize;
+	private static boolean combineFormOnSave = true;
+	private static boolean rebuildBindings = false;
+	private static boolean readOnlyMode = false;
+	private static boolean overwriteValidationsOnRefresh = false;
+	private static boolean showSubmitCancelButtons = false;
+	private static boolean allowInvalidFormSave = false;
 	
 	public static String JAVAROSA = "javarosa";
 	
+	private static NumberFormat cachedDecimalFormat;
+	private static NumberFormat cachedNumberFormat;
+	
+	private static String decimalSeparator;
+	private static String groupingSeparator;
+	
+	
+	public static String localeKey;
 
 	/** 
 	 * The url to navigate to when one closes the form designer by selecting
@@ -88,6 +161,9 @@ public class FormUtil {
 
 	/** The name for the entityId field. */
 	private static String entityIdName;
+	
+	/** name of the valid field */
+	private static String validName = "valid";
 
 	/** The form identifier. */
 	private static String formId;
@@ -105,6 +181,8 @@ public class FormUtil {
 	 * we go to after a form submission. eg ........?patientId=13
 	 */
 	private static boolean appendEntityIdAfterSubmit;
+	
+	private static boolean appendEntityIdAfterCancel;
 
 	/** 
 	 * Flag determining whether to display the language xml tab or not.
@@ -115,6 +193,10 @@ public class FormUtil {
 	 * Flag determining whether to display the form submitted successfully message or not.
 	 */
 	private static boolean showSubmitSuccessMsg = false;
+	
+	private static HashMap<String, String> decimalSeparators = new HashMap<String, String>();
+	
+	private static Widget rootWidget;
 
 	/** The dialog used to show all progress messages. */
 	public static ProgressDialog dlg = new ProgressDialog();
@@ -128,73 +210,65 @@ public class FormUtil {
 		widget.setSize("100%", "100%");
 	}
 
-	//TODO These two functions need to be merged.
-	public static void allowNumericOnly(TextBox textBox, boolean allowDecimal){
-		final boolean allowDecimalPoints = allowDecimal;
-		textBox.addKeyPressHandler(new KeyPressHandler() {
-			public void onKeyPress(KeyPressEvent event) {
-				char keyCode = event.getCharCode();
-
-				if( keyCode == '%' || keyCode == '&' || keyCode == '(')
-					((TextBox) event.getSource()).cancelKey();
-
-				if ((!Character.isDigit(keyCode)) && (keyCode != (char) KeyCodes.KEY_TAB)
-						&& (keyCode != (char) KeyCodes.KEY_BACKSPACE) && (keyCode != (char) KeyCodes.KEY_LEFT)
-						&& (keyCode != (char) KeyCodes.KEY_UP) && (keyCode != (char) KeyCodes.KEY_RIGHT)
-						&& (keyCode != (char) KeyCodes.KEY_DOWN)) {
-
-					if(keyCode == '.' && allowDecimalPoints && !((TextBox)event.getSource()).getText().contains("."))
-						return;
-
-					String text = ((TextBox) event.getSource()).getText().trim();
-					if(keyCode == '-'){
-						if(text.length() == 0 || ((TextBox)event.getSource()).getCursorPos() == 0)
-							return;
-					}
-
-					((TextBox) event.getSource()).cancelKey(); 
-				}
-			}
-		});
+	public static void allowNumericOnly(TextBox textBox, final boolean allowDecimal){
+		textBox.addKeyPressHandler(createNumericFilterKeyboardListener(allowDecimal));
 
 		textBox.addChangeHandler(new ChangeHandler(){
 			public void onChange(ChangeEvent event){
 				try{
-					if(allowDecimalPoints)
-						Double.parseDouble(((TextBox) event.getSource()).getText().trim());
-					else
-						Integer.parseInt(((TextBox) event.getSource()).getText().trim());
-				}
-				catch(Exception ex){
+					String answer = ((TextBox) event.getSource()).getText().trim();
+					if (allowDecimal) {
+						parseDecimalFormat(answer, true);
+					} else {
+						parseNumberFormat(answer, true);
+					}
+				} catch(Exception ex) {
+					Window.alert("Ongeldige numerieke waarde!");
 					((TextBox) event.getSource()).setText(null);
 				}
 			}
 		});
 	}
 
-	public static KeyPressHandler getAllowNumericOnlyKeyboardListener(TextBox textBox, boolean allowDecimal){
-		final boolean allowDecimalPoints = allowDecimal;
+	public static KeyPressHandler createNumericFilterKeyboardListener(final boolean allowDecimalChar) {
 		return new KeyPressHandler() {
 			public void onKeyPress(KeyPressEvent event) {
 				char keyCode = event.getCharCode();
 
+				// -- always cancel these
 				if( keyCode == '%' || keyCode == '&' || keyCode == '(')
 					((TextBox) event.getSource()).cancelKey();
 
-				if ((!Character.isDigit(keyCode)) && (keyCode != (char) KeyCodes.KEY_TAB)
-						&& (keyCode != (char) KeyCodes.KEY_BACKSPACE) && (keyCode != (char) KeyCodes.KEY_LEFT)
-						&& (keyCode != (char) KeyCodes.KEY_UP) && (keyCode != (char) KeyCodes.KEY_RIGHT)
-						&& (keyCode != (char) KeyCodes.KEY_DOWN)) {
-
-					if(keyCode == '.' && allowDecimalPoints && !((TextBox)event.getSource()).getText().contains("."))
-						return;
-
-					String text = ((TextBox) event.getSource()).getText().trim();
-					if((text.length() == 0 && keyCode == '-') || (keyCode == '-' && ((TextBox)event.getSource()).getCursorPos() == 0))
-						return;
-
-					((TextBox) event.getSource()).cancelKey(); 
+				// -- always allow these 
+				if (Character.isDigit(keyCode)) { 
+					return;
 				}
+				if(keyCode == getGroupingSeparator().charAt(0)) {
+					return; // allowing . may be used as thousands separator
+				}
+				if (keyCode == (char) KeyCodes.KEY_TAB || keyCode == (char) KeyCodes.KEY_BACKSPACE ||
+						keyCode == (char) KeyCodes.KEY_LEFT || keyCode == (char) KeyCodes.KEY_UP || 
+						keyCode == (char) KeyCodes.KEY_RIGHT || keyCode == (char) KeyCodes.KEY_DOWN ||
+						keyCode == (char) KeyCodes.KEY_DELETE) {
+					return; // -- special chars
+				}
+				if (isControlChar(keyCode) && (int)keyCode == 0) {
+					return;
+				}
+				// -- test minus symbol
+				String text = ((TextBox) event.getSource()).getText().trim();
+				if (keyCode == '-' && (text.length() == 0 || (((TextBox)event.getSource()).getCursorPos() == 0 && !text.startsWith("-")))) {
+					return;
+				}
+
+				// -- check if decimalChar is allowed
+			
+				if (keyCode == getDecimalSeparator().charAt(0) && allowDecimalChar) {
+					return;
+				}
+
+				// -- all the rest is disallowed
+				((TextBox) event.getSource()).cancelKey();
 			}
 		};
 	}
@@ -206,7 +280,7 @@ public class FormUtil {
 		DOM.setStyleAttribute(h, "top", top);
 	}
 
-	public static void loadOptions(List<OptionDef> options, MultiWordSuggestOracle oracle){
+	public static void loadOptions(List options, MultiWordSuggestOracle oracle){
 		if(options == null)
 			return;
 
@@ -234,6 +308,12 @@ public class FormUtil {
 		return formatXmlPrivate(formatXmlPrivate(xmlContent));
 	}
 
+	/**
+	 * Cannot handle CDATA blocks!
+	 * 
+	 * @param xmlContent
+	 * @return
+	 */
 	private static String formatXmlPrivate(String xmlContent) {
 
 		String result = "";
@@ -349,24 +429,27 @@ public class FormUtil {
 		formDefUploadUrlSuffix = getDivValue("formDefUploadUrlSuffix");
 		entityFormDefDownloadUrlSuffix = getDivValue("entityFormDefDownloadUrlSuffix");
 		formDataUploadUrlSuffix = getDivValue("formDataUploadUrlSuffix");
+		formDataDownloadUrlSuffix = getDivValue("formDataDownloadUrlSuffix");
 		afterSubmitUrlSuffix = getDivValue("afterSubmitUrlSuffix");
+		afterCancelUrlSuffix = getDivValue("afterCancelUrlSuffix");
 		formDefRefreshUrlSuffix = getDivValue("formDefRefreshUrlSuffix");
 		externalSourceUrlSuffix = getDivValue("externalSourceUrlSuffix");
 		multimediaUrlSuffix = getDivValue("multimediaUrlSuffix");
 		fileOpenUrlSuffix = getDivValue("fileOpenUrlSuffix");
 		fileSaveUrlSuffix = getDivValue("fileSaveUrlSuffix");
 		closeUrl = getDivValue("closeUrl");
+		localeKey = getDivValue("localeKey");
 
 		if(multimediaUrlSuffix == null || multimediaUrlSuffix.trim().length() == 0)
 			multimediaUrlSuffix = "multimedia";
 
-		formIdName = getDivValue("formIdName");
+		formIdName = getDivValue(PARAM_NAME_FORM_ID_NAME);
 		if(formIdName == null || formIdName.trim().length() == 0)
 			formIdName = "formId";
 
 		entityIdName = getDivValue("entityIdName");
 		if(entityIdName == null || entityIdName.trim().length() == 0)
-			entityIdName = "patientId";
+			entityIdName = "recordId";
 
 		formId = getDivValue(formIdName);
 		entityId = getDivValue(entityIdName);
@@ -394,52 +477,209 @@ public class FormUtil {
 		format = getDivValue("dateSubmitFormat");
 		if(format != null && format.trim().length() > 0)
 			setDateSubmitFormat(format);
+		
+		javaScriptDateFormat = DateTimeFormat.getFormat("MMM dd, yyyy hh:mm:ss a");
 
 		defaultFontFamily = getDivValue("defaultFontFamily");
 		if(defaultFontFamily == null || defaultFontFamily.trim().length() == 0)
-			defaultFontFamily = "Verdana, 'Lucida Grande', 'Trebuchet MS', Arial, Sans-Serif";
+			defaultFontFamily = "";
 
 		defaultFontSize = getDivValue("defaultFontSize");
 		if(defaultFontSize == null || defaultFontSize.trim().length() == 0)
-			defaultFontSize = "16";
+			defaultFontSize = "13";
 
 		String s = getDivValue("appendEntityIdAfterSubmit");
 		if(s == null || s.trim().length() == 0)
 			appendEntityIdAfterSubmit = false;
 		else
 			appendEntityIdAfterSubmit = !s.equals("0");
+		
+		s = getDivValue("appendEntityIdAfterCancel");
+		if(s == null || s.trim().length() == 0)
+			appendEntityIdAfterCancel = false;
+		else
+			appendEntityIdAfterCancel = !s.equals("0");
 
 		s = getDivValue("showSubmitSuccessMsg");
 		if("1".equals(s) || "true".equals(s))
 			showSubmitSuccessMsg = true;
 
+		s = getDivValue("showSubmitCancelButtons");
+		if("1".equals(s) || "true".equals(s))
+			showSubmitCancelButtons = true;
+
+		s = getDivValue("allowInvalidFormSave");
+		if("1".equals(s) || "true".equals(s))
+			allowInvalidFormSave = true;
+		
 		/*s = getDivValue("showLanguageTab");
 		if("1".equals(s) || "true".equals(s))
 			showLanguageTab = true;*/
-		
+
 		gpsTypeName = getDivValue("gpsTypeName");
 		if(gpsTypeName == null || gpsTypeName.trim().length() == 0)
 			gpsTypeName = XformConstants.DATA_TYPE_TEXT;
-		
+
 		s = getDivValue("formKeyAttributeName");
 		if(s != null && s.trim().length() > 0)
 			XformConstants.ATTRIBUTE_NAME_FORM_KEY = s;
-		
+
 		s = getDivValue("constraintMessageAttributeName");
 		if(s != null && s.trim().length() > 0)
 			XformConstants.ATTRIBUTE_NAME_CONSTRAINT_MESSAGE = s;
+
+		saveFormat = getDivValue(PARAM_NAME_SAVE_FORMAT);
 		
-		saveFormat = getDivValue("saveFormat");
-		
+		undoRedoBufferSize = getDivValue("undoRedoBufferSize");
+
 		if(JAVAROSA.equalsIgnoreCase(saveFormat)){
 			gpsTypeName = "geopoint";
 			XformConstants.ATTRIBUTE_NAME_FORM_KEY = "id";
 			XformConstants.ATTRIBUTE_NAME_CONSTRAINT_MESSAGE = "jr:constraintMsg";
 			XformConstants.DATA_TYPE_BINARY = "binary";
 		}
+
+		s = getDivValue(PARAM_NAME_COMBINE_FORM_ON_SAVE);
+		if(s != null && s.trim().length() > 0){
+			if("0".equals(s) || "false".equals(s))
+				combineFormOnSave = false;
+		}
+
+		s = getDivValue(PARAM_NAME_REBUILD_BINDINGS);
+		if(s != null && s.trim().length() > 0){
+			if("1".equals(s) || "true".equals(s))
+				rebuildBindings = true;
+		}
+
+		s = FormUtil.getDivValue(PARAM_NAME_READONLY, false);
+		if(s != null && s.trim().length() > 0){
+			if("1".equals(s) || "true".equals(s))
+				readOnlyMode = true;
+		}
+		
+		s = getDivValue("overwriteValidationsOnRefresh");
+		if(s != null && s.trim().length() > 0){
+			if("1".equals(s) || "true".equals(s))
+				overwriteValidationsOnRefresh = true;
+		}
+
+		retrieveUrlParameters();
+	}
+
+	/**
+	 * Converts a string to a boolean.
+	 * 
+	 * @param value is the boolean string value.
+	 * @return the boolean value.
+	 */
+	private static boolean fromString2Boolean(String value){
+		return "1".equals(value) || "true".equalsIgnoreCase(value);
+	}
+
+	/**
+	 * Extracts customization parameters from the current url.
+	 * If any of these parameters has been set via a div in the html host file,
+	 * it will be overwritten by the value in the url. 
+	 */
+	private static void retrieveUrlParameters(){
+		String queryString = Window.Location.getQueryString();
+		if(queryString == null){
+			return;
+		}
+
+		//remove the starting ? characher.
+		queryString = queryString.substring(1); 
+
+		String[] parameters = queryString.split("&");
+		if(parameters == null){
+			return;
+		}
+
+		for(String parameter : parameters){
+			String nameValueArray[] = parameter.split("=");
+			if(nameValueArray == null || nameValueArray.length != 2){
+				continue; //Can this happen anyway?
+			}
+
+			setParameterValue(nameValueArray[0], nameValueArray[1]);
+		}
+
+		//Form Id value is set last when we are sure of the formIdName.
+		setFormId(parameters);
+		setEntityId(parameters);
+	}
+
+	/**
+	 * Sets the formId value from an array of url parameters.
+	 * 
+	 * @param parameters is the url parameter array.
+	 */
+	private static void setFormId(String[] parameters){
+		for(String parameter : parameters){
+			String nameValueArray[] = parameter.split("=");
+			if(nameValueArray == null || nameValueArray.length != 2){
+				continue; //Can this happen anyway?
+			}
+
+			if(nameValueArray[0].equalsIgnoreCase(formIdName)){
+				formId = nameValueArray[1];
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Sets the formId value from an array of url parameters.
+	 * 
+	 * @param parameters is the url parameter array.
+	 */
+	private static void setEntityId(String[] parameters){
+		for(String parameter : parameters){
+			String nameValueArray[] = parameter.split("=");
+			if(nameValueArray == null || nameValueArray.length != 2){
+				continue; //Can this happen anyway?
+			}
+
+			if(nameValueArray[0].equalsIgnoreCase(entityIdName)){
+				entityId = nameValueArray[1];
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Sets the value of a customization parameter.
+	 * 
+	 * @param name is the name of the parameter.
+	 * @param value is the value of the parameter;
+	 */
+	private static void setParameterValue(String name, String value){
+		//TODO Need to set more parameters. I started with only the urgently needed ones.
+
+		if(PARAM_NAME_READONLY.equalsIgnoreCase(name))
+			readOnlyMode = fromString2Boolean(value);
+
+		if(PARAM_NAME_REBUILD_BINDINGS.equalsIgnoreCase(name))
+			rebuildBindings = fromString2Boolean(value);
+
+		if(PARAM_NAME_COMBINE_FORM_ON_SAVE.equalsIgnoreCase(name))
+			combineFormOnSave = fromString2Boolean(value);
+
+		if(PARAM_NAME_FORM_ID_NAME.equalsIgnoreCase(name))
+			formIdName = value;
+
+		if(PARAM_NAME_ALLOWINVALIDFORMSAVE.equalsIgnoreCase(name))
+			allowInvalidFormSave = fromString2Boolean(value);
+		
+		if(PARAM_NAME_SAVE_FORMAT.equalsIgnoreCase(name))
+			saveFormat = value;
 	}
 
 	public static String getDivValue(String id){
+		return getDivValue(id, true);
+	}
+
+	public static String getDivValue(String id, boolean remove){
 		//RootPanel p = RootPanel.get(id);
 
 		com.google.gwt.dom.client.Element p = com.google.gwt.dom.client.Document.get().getElementById(id);
@@ -448,7 +688,10 @@ public class FormUtil {
 			if(nodes != null && nodes.getLength() > 0){
 				Node node = nodes.getItem(0);
 				String s = node.getNodeValue();
-				p.removeChild(node);
+
+				if(remove)
+					p.removeChild(node);
+
 				return s;
 			}
 		}
@@ -503,6 +746,10 @@ public class FormUtil {
 	public static DateTimeFormat getDateSubmitFormat(){
 		return dateSubmitFormat;
 	}
+	
+	public static DateTimeFormat getJavaScriptDateTimeFormat(){
+		return javaScriptDateFormat;
+	}
 
 	public static String getFormDefDownloadUrlSuffix(){
 		return formDefDownloadUrlSuffix;
@@ -519,9 +766,17 @@ public class FormUtil {
 	public static String getFormDataUploadUrlSuffix(){
 		return formDataUploadUrlSuffix;
 	}
+	
+	public static String getFormDataDownloadUrlSuffix(){
+		return formDataDownloadUrlSuffix;
+	}
 
 	public static String getAfterSubmitUrlSuffix(){
 		return afterSubmitUrlSuffix;
+	}
+	
+	public static String getAfterCancelUrlSuffix(){
+		return afterCancelUrlSuffix;
 	}
 
 	public static String getFormDefRefreshUrlSuffix(){
@@ -567,15 +822,19 @@ public class FormUtil {
 	/*public static boolean getShowLanguageTab(){
 		return showLanguageTab;
 	}*/
-	
+
 	public static String getGpsTypeName(){
 		return gpsTypeName;
 	}
-	
+
 	public static String getSaveFormat(){
 		return saveFormat;
 	}
 	
+	public static String getUndoRedoBufferSize(){
+		return undoRedoBufferSize;
+	}
+
 	public static boolean isJavaRosaSaveFormat(){
 		return JAVAROSA.equalsIgnoreCase(saveFormat);
 	}
@@ -626,11 +885,49 @@ public class FormUtil {
 	public static boolean appendEntityIdAfterSubmit(){
 		return appendEntityIdAfterSubmit;
 	}
+	
+	public static boolean appendEntityIdAfterCancel(){
+		return appendEntityIdAfterCancel;
+	}
 
 	public static boolean showSubmitSuccessMsg(){
 		return showSubmitSuccessMsg;
 	}
 
+	public static boolean showSubmitCancelButtons(){
+		return showSubmitCancelButtons;
+	}
+
+	public static boolean allowInvalidFormSave(){
+		return allowInvalidFormSave;
+	}
+
+	public static boolean combineFormOnSave(){
+		return combineFormOnSave;
+	}
+
+	public static boolean rebuildBindings(){
+		return rebuildBindings;
+	}
+
+	public static boolean overwriteValidationsOnRefresh(){
+		return overwriteValidationsOnRefresh;
+	}
+	
+	public static boolean isReadOnlyMode(){
+		return readOnlyMode;
+	}
+
+	/**
+	 * Only meant for testing. You must set this before loading your form.
+	 * 
+	 * @param readonly
+	 * @return
+	 */
+	public static void setReadOnlyMode(boolean readonly) {
+		readOnlyMode = readonly;
+	}
+	
 	/**
 	 * Displays an exception to the user.
 	 * 
@@ -711,23 +1008,23 @@ public class FormUtil {
 		if(node.getNodeType() == Node.ELEMENT_NODE){
 			com.google.gwt.xml.client.Node parent = node.getParentNode();
 			while(parent != null && !(parent instanceof Document)){
-				
+
 				String value = ((Element)parent).getAttribute(XformConstants.ATTRIBUTE_NAME_ID);
 				if(value != null)
 					value = "[@id='" + value + "']";
-				
+
 				if(value == null){
 					value = ((Element)parent).getAttribute(XformConstants.ATTRIBUTE_NAME_BIND);
 					if(value != null)
 						value = "[@bind='" + value + "']";
 				}
-				
+
 				if(value == null){
 					value = ((Element)parent).getAttribute(XformConstants.ATTRIBUTE_NAME_REF);
 					if(value != null)
 						value = "[@ref='" + value + "']";
 				}
-				
+
 				path = removePrefix(parent.getNodeName()) + (value == null ? "" : value) + "/" + path;
 				parent = parent.getParentNode();
 			}
@@ -889,13 +1186,14 @@ public class FormUtil {
 		else{
 			// dispatch for IE
 			var evt = document.createEventObject();
-			element.fireEvent('onchange',evt)
+			element.fireEvent('onchange'); //element.fireEvent('onchange',evt)
 		}
     }-*/;
 
 
 	public static native int evaluateIntExpression(String expression) /*-{
-	    return eval(expression);
+		var res = Math.round(eval(expression)); 
+	    return res;
 	}-*/;
 
 	public static native double evaluateDoubleExpression(String expression) /*-{
@@ -906,6 +1204,11 @@ public class FormUtil {
     	return eval(expression);
 	}-*/;
 
+	public static native double limitDoubleFraction(double rawDouble, int digits) /*-{
+		var d = rawDouble;
+		var size = digits;
+		return parseFloat(d.toFixed(size));
+	}-*/;
 
 	public static void setElementFontSizeAndFamily(com.google.gwt.user.client.Element element){
 		try{
@@ -916,14 +1219,14 @@ public class FormUtil {
 
 	public static boolean isNumeric(String value){
 		try{
-			Integer.parseInt(value);
+			Long.parseLong(value);
 			return true;
 		}
 		catch(Exception ex){}
 
 		return false;
 	}
-	
+
 	/**
 	 * Converts a string into a valid XML token (tag name)
 	 * 
@@ -933,18 +1236,18 @@ public class FormUtil {
 	public static String getXmlTagName(String s) {
 		// Converts a string into a valid XML token (tag name)
 		// No spaces, start with a letter or underscore, not 'xml*'
-		
+
 		// if len(s) < 1, return '_blank'
 		if (s == null || s.length() < 1)
 			return "_blank";
-		
+
 		// xml tokens must start with a letter
 		String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
-		
+
 		// after the leading letter, xml tokens may have
 		// digits, period, or hyphen
 		String nameChars = letters + "0123456789.-";
-		
+
 		// special characters that should be replaced with valid text
 		// all other invalid characters will be removed
 		HashMap<String, String> swapChars = new HashMap<String, String>();
@@ -959,12 +1262,12 @@ public class FormUtil {
 		swapChars.put("=", "eq");
 		swapChars.put("/", "slash");
 		swapChars.put("\\\\", "backslash");
-		
+
 		s = s.replace("'", "");
-		
+
 		// start by cleaning whitespace and converting to lowercase
 		s = s.replaceAll("^\\s+", "").replaceAll("\\s+$", "").replaceAll("\\s+", "_").toLowerCase();
-		
+
 		// swap characters
 		Set<Entry<String, String>> swaps = swapChars.entrySet();
 		for (Entry<String, String> entry : swaps) {
@@ -973,7 +1276,7 @@ public class FormUtil {
 			else
 				s = s.replaceAll(String.valueOf(entry.getKey()), "");
 		}
-		
+
 		// ensure that invalid characters and consecutive underscores are
 		// removed
 		String token = "";
@@ -986,16 +1289,345 @@ public class FormUtil {
 				}
 			}
 		}
-		
+
 		// remove extraneous underscores before returning token
 		token = token.replaceAll("_+", "_");
 		token = token.replaceAll("_+$", "");
-		
+
 		// make sure token starts with valid letter
 		if (letters.indexOf(token.charAt(0)) == -1 || token.startsWith("xml"))
 			token = "_" + token;
-		
+
 		// return token
 		return token;
+	}
+
+
+	public static String addParameter(String url, String name, String value){
+		if(value != null && value.trim().length() > 0){
+			if(url.indexOf('?') < 0)
+				url += "?";
+			else
+				url += "&";
+
+			url += name + "=" + value;
+		}
+		return url;
+	}
+
+	public static String appendRandomParameter(String url) {
+		return addParameter(url, "purcFormsRandomParameter", new java.util.Date().getTime() + "");
+	}
+
+	public static String getDecimalSeparator() {
+		if (decimalSeparator == null) {
+			decimalSeparator = LocaleInfo.getCurrentLocale().getNumberConstants().decimalSeparator();
+		}
+		return decimalSeparator;
+	}
+
+	public static String getGroupingSeparator() {
+		if (groupingSeparator == null) {
+			groupingSeparator = LocaleInfo.getCurrentLocale().getNumberConstants().groupingSeparator();
+		}
+		return groupingSeparator;
+	}	
+	
+	public static String getBinding(String s) {
+
+		if (s == null || s.length() < 1)
+			return "";
+		
+		int pos = s.indexOf(')');
+		if(pos > 0)
+			s = s.substring(0, pos);
+
+		// xml tokens must start with a letter
+		String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_/";
+
+		// after the leading letter, xml tokens may have
+		// digits, period, or hyphen
+		String nameChars = letters + "0123456789.-";
+
+		// special characters that should be replaced with valid text
+		// all other invalid characters will be removed
+		HashMap<String, String> swapChars = new HashMap<String, String>();
+		swapChars.put("!", "");
+		swapChars.put("#", "");
+		swapChars.put("\\*", "");
+		swapChars.put("'", "");
+		swapChars.put("\"", "");
+		swapChars.put("%", "");
+		swapChars.put("<", "");
+		swapChars.put(">", "");
+		swapChars.put("=", "");
+		//swapChars.put("/", "");
+		swapChars.put("\\\\", "");
+
+		s = s.replace("'", "");
+
+		// start by cleaning whitespace and converting to lowercase
+		s = s.replaceAll("^\\s+", "").replaceAll("\\s+$", "").replaceAll("\\s+", "").toLowerCase();
+
+		// swap characters
+		Set<Entry<String, String>> swaps = swapChars.entrySet();
+		for (Entry<String, String> entry : swaps) {
+			if (entry.getValue() != null)
+				s = s.replaceAll(entry.getKey(), entry.getValue());
+			else
+				s = s.replaceAll(String.valueOf(entry.getKey()), "");
+		}
+
+		// ensure that invalid characters and consecutive underscores are
+		// removed
+		String token = "";
+		boolean underscoreFlag = false;
+		for (int i = 0; i < s.length(); i++) {
+			if (nameChars.indexOf(s.charAt(i)) != -1) {
+				if (s.charAt(i) != '_' || !underscoreFlag) {
+					token += s.charAt(i);
+					underscoreFlag = (s.charAt(i) == '_');
+				}
+			}
+		}
+
+		// remove extraneous underscores before returning token
+		token = token.replaceAll("_+", "_");
+		token = token.replaceAll("_+$", "");
+
+		// make sure token starts with valid letter
+		if (letters.indexOf(token.charAt(0)) == -1 || token.startsWith("xml"))
+			token = "" + token;
+
+		// return token
+		return token.trim();
+	}
+	
+	/**
+	 * Check if a character is a control character. Examples of control characters are
+	 * ALT, CTRL, ESCAPE, DELETE, SHIFT, HOME, PAGE_UP, BACKSPACE, ENTER, TAB, LEFT, and more.
+	 * 
+	 * @param keyCode the character code.
+	 * @return true if yes, else false.
+	 */
+	public static boolean isControlChar(char keyCode){
+		int code = keyCode;
+		return (code == KeyCodes.KEY_ALT || code == KeyCodes.KEY_BACKSPACE || code == 0 ||
+				code == KeyCodes.KEY_CTRL || code == KeyCodes.KEY_DELETE ||
+				code == KeyCodes.KEY_DOWN || code == KeyCodes.KEY_END ||
+				code == KeyCodes.KEY_ENTER || code == KeyCodes.KEY_ESCAPE ||
+				code == KeyCodes.KEY_HOME || code == KeyCodes.KEY_LEFT ||
+				code == KeyCodes.KEY_PAGEDOWN || code == KeyCodes.KEY_PAGEUP ||
+				code == KeyCodes.KEY_RIGHT || code == KeyCodes.KEY_SHIFT);
+	}
+	
+	// ---------------------------------------------------
+
+	public static void setRootWidget(Widget w) {
+		rootWidget = w;
+	}
+	
+	public static Widget getRootWidget() {
+		return rootWidget;
+	}
+
+	// ---------------------------------------------------
+
+	private static boolean waiting = false;
+
+	/**
+	 * This will call the external onResize so users (iFrames) know when to resize. (when defined)
+	 */
+	public static void onResize() {
+		if (!waiting) { // aggregate changes so we don't call too many times.
+			waiting = true;
+			Scheduler.get().scheduleDeferred(new Command() {
+				public void execute() {
+					Widget w = FormUtil.getRootWidget();
+					if (w != null) {
+						FormUtil.onResize("" + w.getElement().getOffsetHeight());
+					}
+					waiting = false;
+				}
+			});
+		}
+	}
+
+	/**
+	 * Notify the user that the height of this widget changed.
+	 */
+	private static native void onResize(final String height) /*-{
+		if ($wnd.onResize != null) {
+			$wnd.onResize(height);
+		}
+	}-*/;
+
+	/**
+	 * Sorts widgets according their position: top to bottom, left to right. (5 pixel error margin)
+	 * 
+	 * @param widgets
+	 */
+	public static void sortWidgetsByPosition(List<RuntimeWidgetWrapper> widgets) {
+		if (widgets != null && widgets.size() > 0) {
+			Collections.sort(widgets, new WidgetComparator());
+		}
+	}
+	
+	/**
+	 * Compares widgets by their position (5 pixel margin) vertical before horizontal.
+	 * 
+	 * @author Kristof Heirwegh
+	 */
+	private static class WidgetComparator implements Comparator<RuntimeWidgetWrapper> {
+		@Override
+		public int compare(RuntimeWidgetWrapper o1, RuntimeWidgetWrapper o2) {
+			if (o1 == null) { return -1; }
+			if (o2 == null) { return 1; }
+			
+			// -- vertical
+			int vert = (o1.getTopInt() / 5 * 5) - (o2.getTopInt() / 5 * 5);
+			if (vert != 0) { return vert; }
+			
+			// -- horizontal
+			return ((o1.getLeftInt() / 5 * 5) - (o2.getLeftInt() / 5 * 5));
+		}
+	}
+	
+	public static String getValidName() {
+		return validName;
+	}
+
+	public static void setValidName(String validName) {
+		FormUtil.validName = validName;
+	}
+	
+	public static NumberFormat getDecimalFormatter() {
+		if (cachedDecimalFormat == null) {
+			cachedDecimalFormat = NumberFormat.getFormat(DECIMAL_FORMAT_PATTERN);
+		}
+		return cachedDecimalFormat;
+	}
+
+	public static NumberFormat getNumberFormatter() {
+		if (cachedNumberFormat == null) {
+			cachedNumberFormat = NumberFormat.getFormat(NUMBER_FORMAT_PATTERN);
+		}
+		return cachedNumberFormat;
+	}
+
+	public static String formatDecimal(String raw) {
+		if (raw != null && !"".equals(raw.trim())) {
+			try {
+				double d = Double.valueOf(raw);
+				d = limitDoubleFraction(d, FRACTION_LIMIT);
+				return FormUtil.getDecimalFormatter().format(d);
+			} catch (Exception e) {
+				GWT.log("Fout bij formatteren decimal: " + raw);
+				return raw;
+			}
+		}
+		return "0";
+	}
+	
+	public static String formatNumber(String raw) {
+		if (raw != null && !"".equals(raw.trim())) {
+			try {
+				double d = Double.valueOf(raw); // using double to handle scientific notation
+				d = limitDoubleFraction(d, 0);
+				return FormUtil.getNumberFormatter().format(d);
+			} catch (Exception e) {
+				GWT.log("Fout bij formatteren number: " + raw);
+				return raw;
+			}
+		}
+		return "0";
+	}
+
+	public static String parseDecimalFormat(String formattedDecimal) {
+		return parseDecimalFormat(formattedDecimal, false);
+	}
+	
+	public static String parseDecimalFormat(String formattedDecimal, boolean fail) {
+		if (formattedDecimal != null && !"".equals(formattedDecimal.trim())) {
+			if (getDecimalSeparator().equals(formattedDecimal.trim())) {
+				return "0";
+			}
+			
+			try {
+				if (formattedDecimal.contains(",")) {
+					return "" + FormUtil.getDecimalFormatter().parse(formattedDecimal);
+				} else {
+					// presume the user typed a "." for a comma. Fishy, but the only way to allow it.
+					return formattedDecimal;
+				}
+			} catch (Exception e) {
+				if (fail) {
+					throw e;
+				} else {
+					GWT.log("Fout bij parsen formatted decimal: " + formattedDecimal);
+					return formattedDecimal;
+				}
+			}
+		}
+		return null;
+	}
+
+	public static String parseNumberFormat(String formattedNumber) {
+		return parseNumberFormat(formattedNumber, false);
+	}
+
+	public static String parseNumberFormat(String formattedNumber, boolean fail) {
+		if (formattedNumber != null && !"".equals(formattedNumber.trim())) {
+			try {
+				return "" + FormUtil.getNumberFormatter().parse(formattedNumber);
+			} catch (Exception e) {
+				if (fail) {
+					throw e;
+				} else {
+					GWT.log("Fout bij parsen formatted number: " + formattedNumber);
+					return formattedNumber;
+				}
+			}
+		}
+		return null;
+	}
+
+	public static class ErrorResponse extends Response {
+
+		private final String message;
+		
+		public ErrorResponse(String message) {
+			this.message = message;
+		}
+		
+		@Override
+		public String getHeader(String header) {
+			return null;
+		}
+
+		@Override
+		public Header[] getHeaders() {
+			return null;
+		}
+
+		@Override
+		public String getHeadersAsString() {
+			return null;
+		}
+
+		@Override
+		public int getStatusCode() {
+			return 0;
+		}
+
+		@Override
+		public String getStatusText() {
+			return message;
+		}
+
+		@Override
+		public String getText() {
+			return null;
+		}
 	}
 }

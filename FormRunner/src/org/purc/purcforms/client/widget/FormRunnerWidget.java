@@ -128,9 +128,10 @@ public class FormRunnerWidget extends Composite{
 	}
 	
 	
-	public void loadForm(int formId, String xformXml, String modelXml,String layoutXml, String javaScriptSource){
+	public void loadForm(String formId, String xformXml, String modelXml,String layoutXml, String javaScriptSource){
 //		Window.alert("formload");
-		FormDef formDef = XformParser.fromXform2FormDef(xformXml,modelXml);
+		//FormDef formDef = XformParser.fromXform2FormDef(xformXml,modelXml);
+		FormDef formDef = XformParser.fromXform2FormDef(xformXml);
 		formDef.setId(formId);
 		view.loadForm(formDef, layoutXml,javaScriptSource, null,false);
 	}

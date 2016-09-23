@@ -14,6 +14,10 @@ public class StyleUtil {
 	/** The default background colour for groupbox header label. */
 	public static final String COLOR_GROUP_HEADER = "#8FABC7";
 	
+	public static final String DBASTYLE_LOCKED = "locked";
+	public static final String DBASTYLE_H2_HELP = "h2_help";
+	public static final String DBASTYLE_LOCKED_DESIGN = "lockedDesign";
+	
 	public static void setFontStyleIndex(String fontSyle, ListBox listBox){
 		if("italic".equalsIgnoreCase(fontSyle))
 			listBox.setSelectedIndex(1);
@@ -105,6 +109,39 @@ public class StyleUtil {
 			listBox.setSelectedIndex(13);
 		else
 			listBox.setSelectedIndex(0);
+	}
+
+	public static void setDbaStyleIndex(String dbaStyle, ListBox listBox){
+		if("h1".equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(1);
+		else if("h2".equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(2);
+		else if(DBASTYLE_H2_HELP.equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(3);
+		else if("h3".equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(4);
+		else if("titleInfo".equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(5);
+		else if("questionGroup".equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(6);
+		else if("helpText".equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(7);
+		else if(DBASTYLE_LOCKED.equalsIgnoreCase(dbaStyle))
+			listBox.setSelectedIndex(8);
+		else
+			listBox.setSelectedIndex(0);
+	}
+
+	public static void loadDbaStyles(ListBox listBox){
+		listBox.addItem("");
+		listBox.addItem("h1");
+		listBox.addItem("h2");
+		listBox.addItem(DBASTYLE_H2_HELP);
+		listBox.addItem("h3");
+		listBox.addItem("titleInfo");
+		listBox.addItem("questionGroup");
+		listBox.addItem("helpText");
+		listBox.addItem(DBASTYLE_LOCKED);
 	}
 	
 	public static void loadFontStyles(ListBox listBox){

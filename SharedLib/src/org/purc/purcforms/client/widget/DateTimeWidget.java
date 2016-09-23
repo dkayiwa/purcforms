@@ -12,6 +12,8 @@ import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.Focusable;
+import com.google.gwt.user.client.ui.HasEnabled;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.TextBox;
@@ -23,7 +25,7 @@ import com.google.gwt.user.client.ui.TextBox;
  * @author daniel
  *
  */
-public class DateTimeWidget extends Composite{
+public class DateTimeWidget extends Composite implements Focusable, HasEnabled, hasReadonly {
 
 	private HorizontalPanel panel = new HorizontalPanel();
 	private DatePickerWidget dateWidget = new DatePickerWidget();
@@ -55,6 +57,11 @@ public class DateTimeWidget extends Composite{
 		sinkEvents(Event.getTypeInt(KeyDownEvent.getType().getName()));
 
 		addEventHandlers();
+		
+		if (FormUtil.isReadOnlyMode()) {
+			setEnabled(false);
+			setReadOnly(true);
+		}
 	}
 
 
@@ -94,22 +101,14 @@ public class DateTimeWidget extends Composite{
 	}
 
 
-	/**
-	 * Sets the widget tab index.
-	 * 
-	 * @param index the tab index to set.
-	 */
+	@Override
 	public void setTabIndex(int index) {
 		dateWidget.setTabIndex(index);
 		timeWidget.setTabIndex(index);
 	}
 
 
-	/**
-	 * Gets the widget tab index;
-	 * 
-	 * @return the tab index
-	 */
+	@Override
 	public int getTabIndex(){
 		return dateWidget.getTabIndex();
 	}
@@ -150,14 +149,10 @@ public class DateTimeWidget extends Composite{
 		}
 	}
 
-
-	/**
-	 * @see com.google.gwt.user.client.ui.FocusWidget#setFocus(boolean)
-	 */
-	public void setFocus(boolean focused){
+	@Override
+	public void setFocus(boolean focused) {
 		dateWidget.setFocus(focused);
 	}
-
 
 	/**
 	 * @see com.google.gwt.user.client.ui.FocusWidget#setEnabled(boolean)
@@ -186,7 +181,6 @@ public class DateTimeWidget extends Composite{
 		return dateWidget.isEnabled();
 	}
 
-
 	public void addChangeHandler(ChangeHandler handler) {
 		dateWidget.addChangeHandler(handler);
 		timeWidget.addChangeHandler(handler);
@@ -197,7 +191,6 @@ public class DateTimeWidget extends Composite{
 		dateWidget.addKeyUpHandler(handler);
 		timeWidget.addKeyUpHandler(handler);
 	}
-
 
 	public void setFontFamily(String fontFamily){
 		try{
@@ -217,5 +210,22 @@ public class DateTimeWidget extends Composite{
 		catch(Exception ex){
 			//ex.printStackTrace();
 		}
+	}
+
+	@Override
+	public void setAccessKey(char key) {
+		dateWidget.setAccessKey(key);
+	}
+
+
+	@Override
+	public boolean isReadOnly() {
+		return dateWidget.isReadOnly();
+	}
+
+	@Override
+	public void setReadOnly(boolean readonly) {
+		dateWidget.setReadOnly(readonly);
+		timeWidget.setReadOnly(readonly);
 	}
 }

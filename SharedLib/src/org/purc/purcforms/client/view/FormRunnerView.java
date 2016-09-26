@@ -72,6 +72,10 @@ import com.google.gwt.xml.client.Node;
 import com.google.gwt.xml.client.NodeList;
 import com.google.gwt.xml.client.XMLParser;
 
+import com.google.gwt.user.client.ui.MenuBar;
+import com.google.gwt.user.client.ui.PopupPanel;
+import org.purc.purcforms.client.util.FormRunnerUtil;
+
 
 /**
  * This widgets is responsible for displaying a form at run time and lets user fill data 
@@ -204,6 +208,8 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 	 */
 	private List<FormDef> repeatQtnFormDefs = new ArrayList<FormDef>();
 
+	/** Popup for displaying the context menu for the preview. */
+	private PopupPanel popup;
 
 	/**
 	 * Constructs an instance of the form runner.
@@ -218,6 +224,8 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 		initWidget(tabs);
 		tabs.addSelectionHandler(this);
 
+		setupPopup();
+
 		//This is needed for IE which does not seem to set the height properly.
 		Scheduler.get().scheduleDeferred(new Command(){
 			public void execute() {
@@ -228,6 +236,112 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 
 		formRunnerView = this;
 	}
+
+	public void setupPopup(){
+		popup = new PopupPanel(true,true);
+		MenuBar menuBar = new MenuBar(true);
+		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("loadData")),true,new Command(){
+			public void execute() {popup.hide(); loadData();}});
+
+		menuBar.addSeparator();
+		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("refresh")),true,new Command(){
+			public void execute() {popup.hide(); refresh();}});
+
+		menuBar.addSeparator();
+		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("submit")),true,new Command(){
+			public void execute() {popup.hide(); submit();}});
+
+		popup.setWidget(menuBar);
+
+		addNewTab(LocaleText.get("page")+"1");
+
+		DOM.sinkEvents(getElement(),DOM.getEventsSunk(getElement()) | Event.ONMOUSEDOWN);
+
+		//This is needed for IE
+		Scheduler.get().scheduleDeferred(new Command() {
+			public void execute() {
+				setHeight(getHeight());
+			}
+		});
+	}
+
+	/***
+	 * Triggers the right click popup menu
+	 * @param event
+	 */
+	@Override
+	public void onBrowserEvent(Event event) {
+		int type = DOM.eventGetType(event);
+
+		switch (type) {
+			case Event.ONMOUSEDOWN:
+
+				FormRunnerUtil.enableContextMenu(getElement());
+
+				if( (event.getButton() & Event.BUTTON_RIGHT) != 0){
+					if(event.getTarget().getClassName().length() == 0){
+
+						int ypos = event.getClientY();
+						if(Window.getClientHeight() - ypos < 100)
+							ypos = event.getClientY() - 100;
+
+						int xpos = event.getClientX();
+						if(Window.getClientWidth() - xpos < 110)
+							xpos = event.getClientX() - 110;
+
+						FormRunnerUtil.disableContextMenu(popup.getElement());
+						FormRunnerUtil.disableContextMenu(getElement());
+						popup.setPopupPosition(xpos, ypos);
+						popup.show();
+					}
+				}
+				break;
+		}
+	}
+
+	/**
+	 * loads data from the model-panel
+	 */
+	public void loadData() {
+		//TODO get the model from somewhere
+		String modelXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><N_WONEN_EEN_001 xmlns=\"http://www.w3.org/2002/xforms\"><NuttigeOppervlakte eenheid=\"m²\">123</NuttigeOppervlakte><SlaapkamerAantal>123</SlaapkamerAantal><VerwarmingType>AARDGAS</VerwarmingType><IsZorgwoning>J</IsZorgwoning><ZorgwoningOppervlakte eenheid=\"m²\">123</ZorgwoningOppervlakte><IsVrijBeroep>NEE</IsVrijBeroep><IsKamerVerhuur>J</IsKamerVerhuur><KamerVerhuurAantal>123</KamerVerhuurAantal></N_WONEN_EEN_001>";
+		if (modelXml != null) { modelXml = modelXml.trim(); }
+		if (modelXml != null && !"".equals(modelXml)) {
+			FormUtil.dlg.setText(LocaleText.get("refreshingPreview"));
+			FormUtil.dlg.center();
+			try {
+				List<RuntimeWidgetWrapper> externalSourceWidgets = new ArrayList<RuntimeWidgetWrapper>();
+				loadForm(formDef, formDef.getLayoutXml(), formDef.getJavaScriptSource(), externalSourceWidgets, true, modelXml);
+
+			} catch(Exception ex) {
+				FormUtil.displayException(ex);
+			}
+			FormUtil.dlg.hide();
+
+		} else {
+			Window.alert("Geen data gevonden. plak of schrijf uw data op het Model tabblad vooraleer deze actie uit te voeren.");
+		}
+	}
+
+	public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets, boolean previewMode, String modelXml) {
+		FormDef fd = null;
+		if (modelXml != null) {	// loading data
+			fd = XformParser.copyFormDef(formDef);
+			XformParser.loadDataNode(fd, modelXml);
+			previewMode = false; // if previewmode is set, data will be overwritten! so we copy it first ourselves
+		} else {
+			fd = formDef;
+		}
+		loadForm(fd, layoutXml, javaScriptSrc, externalSourceWidgets, previewMode);
+	}
+
+//	@Override
+//	public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets, boolean previewMode) {
+//		super.loadForm(formDef, layoutXml, javaScriptSrc, externalSourceWidgets, previewMode);
+//		if(this.formDef.getDoc() == null) {
+//			XformBuilder.fromFormDef2Xform(this.formDef);
+//		}
+//	}
 
 	/**
 	 * Reloads the form runner view
@@ -867,17 +981,25 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 		return parentWrapper;
 	}
 
-	/**
-	 * Submits form data to the server.
-	 */
 	protected void submit(){
+		if(formDef != null){
+			if(formDef.getDoc() == null)
+				XformBuilder.fromFormDef2Xform(formDef);
 
-		//Before calling the submit listener, we first check if the user is authenticated
-		//The authentication will call us back and tell us whether to proceed with the
-		//data submission or display the login dialog box.
-		if(formDef != null)
-			FormUtil.isAuthenticated();
-		submitData();
+			if(!isValid(false))
+				return;
+
+			saveValues(); // Do not save before validation! (because dataNode will be cleaned up & not restored)
+
+			String xml = XformUtil.getInstanceDataDoc(formDef.getDoc()).toString();
+
+			xml = FormRunnerUtil.formatXml(xml); //"<?xml version='1.0' encoding='UTF-8' ?> " +
+			Window.alert(xml);
+			// xml = FormUtil.formatXml(xml); //"<?xml version='1.0' encoding='UTF-8' ?> " +
+			submitListener.onSubmit(xml, true);
+
+			//refresh(); // reset form
+		}
 	}
 
 	public boolean nextPage(){
@@ -2219,4 +2341,31 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 			$wnd.onFormLoaded(result);
 		}
 	}-*/;
+
+	/**
+	 * Reloads widgets on the preview surface.
+	 */
+	public void refresh(){
+		FormUtil.dlg.setText(LocaleText.get("refreshingPreview"));
+		FormUtil.dlg.center();
+
+		Scheduler.get().scheduleDeferred(new Command(){
+			public void execute() {
+				refreshNow();
+			}
+		});
+	}
+	public void refreshNow() {
+		try{
+			//centerPanel.commitChanges();
+			List<RuntimeWidgetWrapper> externalSourceWidgets = new ArrayList<RuntimeWidgetWrapper>();
+//			if(Context.isOfflineMode())
+//				;//externalSourceWidgets = null;
+			loadForm(formDef, formDef.getLayoutXml(), formDef.getJavaScriptSource(), externalSourceWidgets, true);
+			FormUtil.dlg.hide();
+		}
+		catch(Exception ex){
+			FormUtil.displayException(ex);
+		}
+	}
 }

@@ -1046,4 +1046,18 @@ public class XformParser {
 		return "true".equalsIgnoreCase(element.getAttribute(XformConstants.ATTRIBUTE_NAME_DESIGNER_READONLY_CALCULATE)) ||
 			   "true()".equalsIgnoreCase(element.getAttribute(XformConstants.ATTRIBUTE_NAME_DESIGNER_READONLY_CALCULATE));
 	}
+	/**
+	 * Overloads the fromXform2FormDef method in order to fit our needs
+	 *
+	 * @param xml the document xml.
+	 * @author rrc
+	 * @return the form definition object.
+	 */
+	public static FormDef fromXform2FormDefCipal(String xml){
+		Document doc = XmlUtil.getDocument(xml);
+
+		HashMap<String,HashMap<String,String>> languageText = new HashMap<String,HashMap<String,String>>();
+
+		return fromXform2FormDef(doc, xml, languageText);
+	}
 }

@@ -67,6 +67,17 @@ public class FormRunnerWidget extends Composite{
 	public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets){
 		view.loadForm(formDef, layoutXml,javaScriptSrc,externalSourceWidgets,false);
 	}
+
+    /**
+     * Loads a form definition object and uses a given layout xml for its widgets.
+     *
+     * @param formDef the form definition object.
+     * @param layoutXml the widget layout xml.
+     * @param externalSourceWidgets list of widgets whose data sources come from outside the xform.
+     */
+    public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets, String modelXml){
+        view.loadForm(formDef, layoutXml,javaScriptSrc,externalSourceWidgets,true, modelXml);
+    }
 	
 	
 	/**
@@ -88,9 +99,21 @@ public class FormRunnerWidget extends Composite{
 	 * @author rrc
 	 */
 	public void loadForm(int formId, int entityId, String xml){
-		controller.loadForm(formId, entityId, xml);
+		controller.loadForm(formId, entityId, xml, "");
 	}
-	
+
+    /**
+     * Loads a form with a given id and for a certain entity id and passes a read xml and its model as parameter
+     *
+     * @param formId the form id.
+     * @param entityId the entity id.
+     * @param xml to be read in the controller
+     * @author rrc
+     */
+    public void loadForm(int formId, int entityId, String xml, String model){
+        controller.loadForm(formId, entityId, xml, model);
+    }
+
 	/**
 	 * Loads an xforms document with its layout.
 	 * 

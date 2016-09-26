@@ -33,6 +33,7 @@ public class FormRunnerEntryPoint implements EntryPoint{
 	public static final Images images = (Images) GWT.create(Images.class);
 
 	private String xml = "";
+	private String model = "";
 
 	/**
 	 * This is the entry point method.
@@ -89,7 +90,9 @@ public class FormRunnerEntryPoint implements EntryPoint{
 		String formId = "1";
 		String entityId = "1";
 
-		if (xml != null && xml.length() != 0) {
+		if (model != null && model.length() != 0) {
+			formRunner.loadForm(Integer.parseInt(formId), Integer.parseInt(entityId), xml, model);
+		} else if (xml != null && xml.length() != 0) {
 			formRunner.loadForm(Integer.parseInt(formId), Integer.parseInt(entityId), xml);
 		} else if (formId != null && entityId != null) {
 			formRunner.loadForm(Integer.parseInt(formId), Integer.parseInt(entityId));
@@ -111,32 +114,38 @@ public class FormRunnerEntryPoint implements EntryPoint{
         });
 	}
 
-//	private String readXML(String xmlUrl){
-//		StringBuilder builder = new StringBuilder();
-//
-//		URL url = null;
-//		try {
-//			url = new URL(xmlUrl);
-//
-//			BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-//			String line;
-//			while ((line = reader.readLine()) != null) {
-//				builder.append(line);
-//			}
-//			reader.close();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//
-//		return builder.toString();
-//	}
-
 	private void readXML(String xmlUrl){
 		try {
 			new RequestBuilder(RequestBuilder.GET, xmlUrl).sendRequest("", new RequestCallback() {
 				@Override
 				public void onResponseReceived(Request req, Response resp) {
 					xml = resp.getText();
+					String modelUrl = FormUtil.getDivValue("modelurl");
+
+					if(modelUrl != null && modelUrl.length() != 0){
+						readModel(modelUrl);
+					} else {
+						executeFormLoad();
+					}
+				}
+				@Override
+				public void onError(Request res, Throwable throwable) {
+					// handle errors
+					Window.alert("Error loading the purcform XML");
+				}
+			});
+		}
+		catch (Exception e){
+			Window.alert(e.toString());
+		}
+	}
+
+	private void readModel(String modelURL){
+		try {
+			new RequestBuilder(RequestBuilder.GET, modelURL).sendRequest("", new RequestCallback() {
+				@Override
+				public void onResponseReceived(Request req, Response resp) {
+					model = resp.getText();
 					executeFormLoad();
 				}
 				@Override

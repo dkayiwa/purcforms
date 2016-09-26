@@ -211,6 +211,8 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 	/** Popup for displaying the context menu for the preview. */
 	private PopupPanel popup;
 
+	private String modelXml = "";
+
 	/**
 	 * Constructs an instance of the form runner.
 	 *
@@ -240,14 +242,14 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 	public void setupPopup(){
 		popup = new PopupPanel(true,true);
 		MenuBar menuBar = new MenuBar(true);
-		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("loadData")),true,new Command(){
-			public void execute() {popup.hide(); loadData();}});
+//		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("loadData")),true,new Command(){
+//			public void execute() {popup.hide(); loadData();}});
 
-		menuBar.addSeparator();
-		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("refresh")),true,new Command(){
-			public void execute() {popup.hide(); refresh();}});
+//		menuBar.addSeparator();
+//		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("refresh")),true,new Command(){
+//			public void execute() {popup.hide(); refresh();}});
 
-		menuBar.addSeparator();
+//		menuBar.addSeparator();
 		menuBar.addItem(FormRunnerUtil.createHeaderHTML(null,LocaleText.get("submit")),true,new Command(){
 			public void execute() {popup.hide(); submit();}});
 
@@ -304,7 +306,7 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 	 */
 	public void loadData() {
 		//TODO get the model from somewhere
-		String modelXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><N_WONEN_EEN_001 xmlns=\"http://www.w3.org/2002/xforms\"><NuttigeOppervlakte eenheid=\"m²\">123</NuttigeOppervlakte><SlaapkamerAantal>123</SlaapkamerAantal><VerwarmingType>AARDGAS</VerwarmingType><IsZorgwoning>J</IsZorgwoning><ZorgwoningOppervlakte eenheid=\"m²\">123</ZorgwoningOppervlakte><IsVrijBeroep>NEE</IsVrijBeroep><IsKamerVerhuur>J</IsKamerVerhuur><KamerVerhuurAantal>123</KamerVerhuurAantal></N_WONEN_EEN_001>";
+//		String modelXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><N_WONEN_EEN_001 xmlns=\"http://www.w3.org/2002/xforms\"><NuttigeOppervlakte eenheid=\"m²\">123</NuttigeOppervlakte><SlaapkamerAantal>123</SlaapkamerAantal><VerwarmingType>AARDGAS</VerwarmingType><IsZorgwoning>J</IsZorgwoning><ZorgwoningOppervlakte eenheid=\"m²\">123</ZorgwoningOppervlakte><IsVrijBeroep>NEE</IsVrijBeroep><IsKamerVerhuur>J</IsKamerVerhuur><KamerVerhuurAantal>123</KamerVerhuurAantal></N_WONEN_EEN_001>";
 		if (modelXml != null) { modelXml = modelXml.trim(); }
 		if (modelXml != null && !"".equals(modelXml)) {
 			FormUtil.dlg.setText(LocaleText.get("refreshingPreview"));
@@ -323,9 +325,10 @@ public class FormRunnerView extends Composite implements SelectionHandler<Intege
 		}
 	}
 
-	public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets, boolean previewMode, String modelXml) {
+	public void loadForm(FormDef formDef,String layoutXml, String javaScriptSrc, List<RuntimeWidgetWrapper> externalSourceWidgets, boolean previewMode, String model) {
 		FormDef fd = null;
-		if (modelXml != null) {	// loading data
+		if (model != null) {
+			modelXml = model;
 			fd = XformParser.copyFormDef(formDef);
 			XformParser.loadDataNode(fd, modelXml);
 			previewMode = false; // if previewmode is set, data will be overwritten! so we copy it first ourselves

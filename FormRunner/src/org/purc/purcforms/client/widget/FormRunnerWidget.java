@@ -78,6 +78,18 @@ public class FormRunnerWidget extends Composite{
 	public void loadForm(int formId, int entityId){
 		controller.loadForm(formId,entityId);
 	}
+
+	/**
+	 * Loads a form with a given id and for a certain entity id and passes a read xml as parameter
+	 *
+	 * @param formId the form id.
+	 * @param entityId the entity id.
+	 * @param xml to be read in the controller
+	 * @author rrc
+	 */
+	public void loadForm(int formId, int entityId, String xml){
+		controller.loadForm(formId, entityId, xml);
+	}
 	
 	/**
 	 * Loads an xforms document with its layout.

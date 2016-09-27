@@ -18,6 +18,7 @@ import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.RequestException;
 
+import com.google.gwt.dom.client.Element;
 /**
  * This is the GWT entry point for the form runtime engine.
  */
@@ -54,7 +55,10 @@ public class FormRunnerEntryPoint implements EntryPoint{
 
 	public void onModuleLoadDeffered() {
 		try{
-			RootPanel rootPanel = RootPanel.get("purcformrunner");
+            String rootId = ((Element)RootPanel.get().getElement().getChild(1)).getId();
+//			Window.alert(rootId);
+            RootPanel rootPanel = RootPanel.get(rootId);
+
 			if(rootPanel == null){
 				FormUtil.dlg.hide();
 				return;

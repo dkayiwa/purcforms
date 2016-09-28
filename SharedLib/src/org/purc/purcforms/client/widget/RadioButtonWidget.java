@@ -19,7 +19,7 @@ import com.google.gwt.user.client.ui.RadioButton;
  * @author daniel
  *
  */
-public class RadioButtonWidget extends RadioButton implements hasReadonly {
+public class RadioButtonWidget extends RadioButton implements HasReadonly {
 
 	/** Flag to tell whether this radio button is checked or not. */
 	private boolean checked = false;

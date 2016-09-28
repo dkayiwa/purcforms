@@ -25,6 +25,11 @@ import com.google.gwt.xml.client.Element;
  */
 public class OptionDef implements Serializable {
 	
+	/**
+	 * Generated serialization ID
+	 */
+	private static final long serialVersionUID = 6011207697283921703L;
+
 	/** The numeric unique identifier of an answer option. */
 	private int id = ModelConstants.NULL_ID;
 	
@@ -57,12 +62,12 @@ public class OptionDef implements Serializable {
 	
 	/** Constructs the answer option definition object where
 	 * initialization parameters are not supplied. */
-	public OptionDef(QuestionDef parent) {  
+	public OptionDef(QuestionDef parent) {
 		this.parent = parent;
 	}
 	
 	/** The copy constructor  */
-	public OptionDef(OptionDef optionDef,QuestionDef parent) { 
+	public OptionDef(OptionDef optionDef, QuestionDef parent) {
 		 this(parent);
 		 setId(optionDef.getId());
 		 setText(optionDef.getText());

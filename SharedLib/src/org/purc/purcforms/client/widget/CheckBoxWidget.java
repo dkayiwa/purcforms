@@ -13,7 +13,7 @@ import com.google.gwt.user.client.ui.CheckBox;
  * @author daniel
  * 
  */
-public class CheckBoxWidget extends CheckBox implements hasReadonly {
+public class CheckBoxWidget extends CheckBox implements HasReadonly {
 
 	private boolean readonly = false;
 

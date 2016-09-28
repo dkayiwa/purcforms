@@ -25,7 +25,7 @@ import com.google.gwt.user.client.ui.TextBox;
  * @author daniel
  *
  */
-public class DateTimeWidget extends Composite implements Focusable, HasEnabled, hasReadonly {
+public class DateTimeWidget extends Composite implements Focusable, HasEnabled, HasReadonly {
 
 	private HorizontalPanel panel = new HorizontalPanel();
 	private DatePickerWidget dateWidget = new DatePickerWidget();

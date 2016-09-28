@@ -35,10 +35,12 @@ public class RelevantParser {
 	 * @param relevants the map of relevant attribute values keyed by their 
 	 * 					  question definition objects.
 	 */
-	public static void addSkipRules(FormDef formDef, HashMap relevants){
-		Vector rules = new Vector();
+	public static void addSkipRules(FormDef formDef, HashMap<QuestionDef, String> relevants){
+		Vector<SkipRule> rules = new Vector<SkipRule>();
 
-		Iterator keys = relevants.keySet().iterator();
+		HashMap<String,SkipRule> skipRulesMap = new HashMap<String,SkipRule>();
+
+		Iterator<QuestionDef> keys = relevants.keySet().iterator();
 		int id = 0;
 		while(keys.hasNext()){
 			QuestionDef qtn = (QuestionDef)keys.next();
@@ -81,7 +83,7 @@ public class RelevantParser {
 
 		//For now we only have one action target, much as the object model is
 		//flexible enough to support any number of them.
-		Vector actionTargets = new Vector();
+		Vector<Integer> actionTargets = new Vector<Integer>();
 		actionTargets.add(new Integer(questionId));
 		skipRule.setActionTargets(actionTargets);
 
@@ -100,10 +102,10 @@ public class RelevantParser {
 	 * @param action the skip rule target action.
 	 * @return the conditions list.
 	 */
-	private static Vector getSkipRuleConditions(FormDef formDef, String relevant, int action){
-		Vector conditions = new Vector();
+	private static Vector<Condition> getSkipRuleConditions(FormDef formDef, String relevant, int action){
+		Vector<Condition> conditions = new Vector<Condition>();
 
-		Vector list = XpathParser.getConditionsOperatorTokens(relevant);
+		Vector<?> list = XpathParser.getConditionsOperatorTokens(relevant);
 
 		Condition condition  = new Condition();
 		for(int i=0; i<list.size(); i++){

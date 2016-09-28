@@ -14,7 +14,7 @@ import com.google.gwt.user.client.ui.ListBox;
  * @author daniel
  *
  */
-public class ListBoxWidget extends ListBox implements hasReadonly {
+public class ListBoxWidget extends ListBox implements HasReadonly {
 	
 	/** 
 	 * This allows us keep track of the selected index such that we can restore it

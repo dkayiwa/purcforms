@@ -151,7 +151,7 @@ public class DatePickerWidget extends DatePickerEx implements KeyPressHandler, C
 				((RuntimeWidgetWrapper)getParent().getParent()).isLocked()){
 			return;
 		}
-		
+
 		switch (DOM.eventGetType(event)) {
 		case Event.ONBLUR:
 			popup.hidePopupCalendar();
@@ -163,7 +163,7 @@ public class DatePickerWidget extends DatePickerEx implements KeyPressHandler, C
 		}
 		super.onBrowserEvent(event);
 	}
-	
+
 	public void fireChangeEvent(final HasHandlers handlerSource) {
 		DeferredCommand.addCommand(new Command() {
 			public void execute() {
@@ -221,7 +221,7 @@ public class DatePickerWidget extends DatePickerEx implements KeyPressHandler, C
 	 * @see com.google.gwt.user.client.ui.KeyboardListener#onKeyUp(com.google.gwt.user.client.ui.Widget, char, int)
 	 */
 	public void onKeyUp(Widget sender, char keyCode, int modifiers) {
-		// Nothing to do		
+		// Nothing to do
 	}
 
 	/**
@@ -271,7 +271,7 @@ public class DatePickerWidget extends DatePickerEx implements KeyPressHandler, C
 
 	/**
 	 * Return true if the selectedDay is between datepicker's interval dates.
-	 * 
+	 *
 	 * @param selectedDay
 	 * @return boolean
 	 */

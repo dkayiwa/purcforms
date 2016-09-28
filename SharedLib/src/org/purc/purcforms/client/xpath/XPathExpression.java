@@ -10,15 +10,19 @@ import com.google.gwt.xml.client.Node;
  */
 public class XPathExpression implements Serializable
 {
+	/**
+	 * Generated serialization ID.
+	 */
+	private static final long serialVersionUID = 2204726896219201531L;
+	
 	String[] locationStepStringsArray;
 	XPathLocationStep[] locationStepArray;
 	Vector resultNodeSet;
 	String expression = null;
 	Node startNode = null;
 		
-	public XPathExpression (Node startNode, String expression)
-	{
-		Vector tmp = new Vector();
+	public XPathExpression (Node startNode, String expression){
+		Vector<String> tmp = new Vector<String>();
 
 		this.startNode = startNode;
 		this.expression = expression;
@@ -76,16 +80,16 @@ public class XPathExpression implements Serializable
 		//the result node set should contain nodes
 		//with regard to the starting poing of the xpath expression
 		//for now just pass the root of the document
-		resultNodeSet = new Vector();
+		resultNodeSet = new Vector<Node>();
 		resultNodeSet.addElement(startNode);
 		
 		boolean attributeFound = false;
-		Vector prevResults = null;
+		Vector<Object> prevResults = null;
 		
 		//start processing every location
 		for(int j=0; j < locationStepStringsArray.length; j++)
 		{
-			prevResults = new Vector();
+			prevResults = new Vector<Object>();
 			
 			String locationStepString = locationStepStringsArray[j];
 			if(locationStepString.indexOf('@') >= 0){
@@ -102,7 +106,7 @@ public class XPathExpression implements Serializable
 		}
 	}
 	
-	private void addAttributeSteps(String step,Vector list){
+	private void addAttributeSteps(String step, Vector<String> list){
 		int posBeg = 0;
 		int posEnd = step.indexOf(" and ");
 		/*if(posEnd > 0){ //TODO Need to support more than two and expressions
@@ -127,8 +131,7 @@ public class XPathExpression implements Serializable
 		}
 	}
 	
-	public Vector getResult()
-	{
+	public Vector<Node> getResult(){
 		return resultNodeSet;
 	}
 }

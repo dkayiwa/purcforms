@@ -32,7 +32,7 @@ import com.google.gwt.user.client.ui.Widget;
  * 
  * @author Kristof Heirwegh
  */
-public class RichTextAreaWidget extends Composite implements HasValue<String>, HasText, Focusable, HasEnabled, hasReadonly {
+public class RichTextAreaWidget extends Composite implements HasValue<String>, HasText, Focusable, HasEnabled, HasReadonly {
 
 	private static final MyUiBinder UIBINDER = GWT.create(MyUiBinder.class);
 	interface MyUiBinder extends UiBinder<Widget, RichTextAreaWidget> {}

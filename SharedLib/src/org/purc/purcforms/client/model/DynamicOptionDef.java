@@ -26,6 +26,11 @@ import com.google.gwt.xml.client.Element;
  */
 public class DynamicOptionDef  implements Serializable{
 
+	/**
+	 * Generated serialization ID
+	 */
+	private static final long serialVersionUID = 5333695709493711857L;
+
 	/** The question whose values are determined by or dependent on the answer of another 
 	 * (parent) question. In other wards this question must be of type Single Select Dynamic.
 	 *  This is the question we refer to as the child in this relationship.
@@ -214,7 +219,7 @@ public class DynamicOptionDef  implements Serializable{
 			ItemsetBuilder.fromDynamicOptionDef2Xform(formDef.getDoc(),this,parentQuestionDef,formDef);
 		else{
 			//Update the nodeset child instance id
-			QuestionDef  questionDef = formDef.getQuestion(questionId);
+			QuestionDef questionDef = formDef.getQuestion(questionId);
 			if(questionDef == null || questionDef.getFirstOptionNode() == null)
 				return;
 
@@ -309,7 +314,7 @@ public class DynamicOptionDef  implements Serializable{
 	 * @return the option.
 	 */
 	private OptionDef getOptionWithText(List<OptionDef> options, String text){
-		List list = (List)options;
+		List<OptionDef> list = (List<OptionDef>)options;
 		for(int i=0; i<list.size(); i++){
 			OptionDef optionDef = (OptionDef)list.get(i);
 			if(optionDef.getText().equals(text))
@@ -326,7 +331,7 @@ public class DynamicOptionDef  implements Serializable{
 	 * @return the option.
 	 */
 	private OptionDef getOptionWithValue(List<OptionDef> options, String value){
-		List list = (List)options;
+		List<OptionDef> list = (List<OptionDef>)options;
 		for(int i=0; i<list.size(); i++){
 			OptionDef optionDef = (OptionDef)list.get(i);
 			if(optionDef.getBinding().equals(value))
@@ -362,7 +367,7 @@ public class DynamicOptionDef  implements Serializable{
 	 * @return the option.
 	 */
 	private OptionDef getOptionWithId(List<OptionDef> options, int id){
-		List list = (List)options;
+		List<OptionDef> list = (List<OptionDef>)options;
 		for(int i=0; i<list.size(); i++){
 			OptionDef optionDef = (OptionDef)list.get(i);
 			if(optionDef.getId() == id)

@@ -61,7 +61,7 @@ public class ErrorDialog extends DialogBox implements ClickHandler {
 		hide();
 		
 		//TODO Some how when an exception is thrown, the progress dialog may stay on. So needs a fix.
-		FormUtil.dlg.hide(); 
+		FormUtil.dlg.hide();
 	}
 
 	/**

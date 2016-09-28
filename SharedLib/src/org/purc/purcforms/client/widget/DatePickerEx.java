@@ -252,7 +252,7 @@ public class DatePickerEx extends TextBoxWidget implements ClickListener, Change
 	
 	/**
 	 * Return true if the selectedDay is between datepicker's interval dates.
-	 * 
+	 *
 	 * @param selectedDay
 	 * @return boolean
 	 */
@@ -283,7 +283,7 @@ public class DatePickerEx extends TextBoxWidget implements ClickListener, Change
 	public void setYoungestDate(Date youngestDate) {
 		this.youngestDate = youngestDate;
 	}
-	
+
 	/**
 	 * @see com.google.gwt.user.client.ui.TextBoxBase#addChangeListener(com.google.gwt.user.client.ui.ChangeListener)
 	 */

@@ -29,10 +29,10 @@ public class XpathParser {
 	 * @param expression the xpath expression.
 	 * @return the xpath condition list.
 	 */
-	public static Vector getConditionsOperatorTokens(String expression){
+	public static Vector<String> getConditionsOperatorTokens(String expression){
 		//TODO For now we are only dealing with one AND or OR, for simplicity
 		//If one mixes both in the same relevant statement, then we take the first.
-		Vector list = new Vector();
+		Vector<String> list = new Vector<String>();
 
 		int pos = 0;
 		do{
@@ -52,7 +52,7 @@ public class XpathParser {
 	 * @param list the list of xpath conditions.
 	 * @return the position or index from which the next condition search should begin.
 	 */
-	private static int extractConditionsOperatorTokens(String expression,int startPos, Vector list){
+	private static int extractConditionsOperatorTokens(String expression,int startPos, Vector<String> list){
 		int pos,pos2,opSize = XformConstants.CONDITIONS_OPERATOR_TEXT_AND.length();
 
 		pos = expression.toLowerCase().indexOf(XformConstants.CONDITIONS_OPERATOR_TEXT_AND,startPos);

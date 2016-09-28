@@ -1,17 +1,13 @@
 package org.purc.purcforms.client.xforms;
 
+import com.google.gwt.xml.client.Element;
+import org.purc.purcforms.client.model.*;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.purc.purcforms.client.model.Condition;
-import org.purc.purcforms.client.model.FormDef;
-import org.purc.purcforms.client.model.ModelConstants;
-import org.purc.purcforms.client.model.QuestionDef;
-import org.purc.purcforms.client.model.ValidationRule;
 import org.purc.purcforms.client.util.FormUtil;
-
-import com.google.gwt.xml.client.Element;
 
 
 /**
@@ -39,10 +35,10 @@ public class ConstraintParser {
 	 * @param constraints the map of constraint attribute values keyed by their 
 	 * 					  question definition objects.
 	 */
-	public static void addValidationRules(FormDef formDef, HashMap constraints){
-		Vector rules = new Vector();
+	public static void addValidationRules(FormDef formDef, HashMap<QuestionDef, ?> constraints){
+		Vector<ValidationRule> rules = new Vector<ValidationRule>();
 
-		Iterator keys = constraints.keySet().iterator();
+		Iterator<QuestionDef> keys = constraints.keySet().iterator();
 		//int id = 0;
 		while(keys.hasNext()){
 			QuestionDef qtn = (QuestionDef)keys.next();
@@ -102,9 +98,9 @@ public class ConstraintParser {
 	 * @param questionId the identifier of the question which is the target of the validation rule.
 	 * @return the conditions list.
 	 */
-	private static Vector getValidationRuleConditions(FormDef formDef, String constraint, int questionId){
-		Vector conditions = new Vector();
-		Vector list = XpathParser.getConditionsOperatorTokens(constraint);
+	private static Vector<Condition> getValidationRuleConditions(FormDef formDef, String constraint, int questionId){
+		Vector<Condition> conditions = new Vector<Condition>();
+		Vector<?> list = XpathParser.getConditionsOperatorTokens(constraint);
 
 		Condition condition  = new Condition();
 		for(int i=0; i<list.size(); i++){
@@ -112,39 +108,6 @@ public class ConstraintParser {
 			if(condition != null)
 				conditions.add(condition);
 		}
-		
-		
-		//TODO Commented out because of being buggy when form is refreshed
-		//Preserve the between operator
-		/*if( (constraint.contains(" and ") && constraint.contains(">") && constraint.contains("<") ) &&
-				(conditions.size() == 2 || (conditions.size() == 3 && XformParserUtil.getConditionsOperator(constraint) == ModelConstants.CONDITIONS_OPERATOR_OR)) ){
-			
-			condition  = new Condition();
-			condition.setId(questionId);
-			condition.setOperator(ModelConstants.OPERATOR_BETWEEN);
-			condition.setQuestionId(questionId);
-			if(constraint.contains("length(.)") || constraint.contains("count(.)"))
-				condition.setFunction(ModelConstants.FUNCTION_LENGTH);
-			
-			condition.setValue(((Condition)conditions.get(0)).getValue());
-			condition.setSecondValue(((Condition)conditions.get(1)).getValue());
-			
-			//This is just for the designer
-			if(condition.getValue().startsWith(formDef.getBinding() + "/"))
-				condition.setValueQtnDef(formDef.getQuestion(condition.getValue().substring(condition.getValue().indexOf('/')+1)));
-			else
-				condition.setBindingChangeListener(formDef.getQuestion(questionId));
-			
-			Condition cond = null;
-			if(conditions.size() == 3)
-				cond = (Condition)conditions.get(2);
-			
-			conditions.clear();
-			conditions.add(condition);
-			
-			if(cond != null)
-				conditions.add(cond);
-		}*/
 
 		return conditions;
 	}
@@ -158,7 +121,7 @@ public class ConstraintParser {
 	 * @param questionId the identifier of the question that has the validation rule.
 	 * @return the new condition object.
 	 */
-	private static Condition getValidationRuleCondition(FormDef formDef, String constraint, int questionId){		
+	private static Condition getValidationRuleCondition(FormDef formDef, String constraint, int questionId){
 		Condition condition  = new Condition();
 		condition.setId(questionId);
 		condition.setOperator(XformParserUtil.getOperator(constraint,ModelConstants.ACTION_ENABLE));
@@ -205,7 +168,7 @@ public class ConstraintParser {
 		else if(condition.getOperator() == ModelConstants.OPERATOR_NOT_EQUAL)
 			condition.setOperator(ModelConstants.OPERATOR_IS_NOT_NULL); //must be != ''
 		else
-			condition.setOperator(ModelConstants.OPERATOR_IS_NULL); //must be = ''
+			condition.setOperator(ModelConstants.OPERATOR_IS_NULL);
 
 		if(constraint.contains("length(.)") || constraint.contains("count-selected(.)"))
 			condition.setFunction(ModelConstants.FUNCTION_LENGTH);
